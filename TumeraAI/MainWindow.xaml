@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="TumeraAI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TumeraAI"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ic="using:FluentIcons.WinUI"
+    mc:Ignorable="d">
+    <Window.SystemBackdrop>
+        <MicaBackdrop Kind="Base"/>
+    </Window.SystemBackdrop>
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="38"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal" 
+                    VerticalAlignment="Top"
+                    Margin="4,12,0,0"
+                    Grid.Row="0">
+            <Image Source="ms-appx:///Assets/StoreLogo.png"
+                   HorizontalAlignment="Left"
+                   Width="16" 
+                   Height="16"
+                   Margin="8,0,0,0"/>
+            <TextBlock Text="Tumera" 
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       VerticalAlignment="Center"
+                       Margin="15,0,0,0"/>
+        </StackPanel>
+        <NavigationView x:Name="RootNavigation"
+                        Grid.Row="1"
+                        IsBackButtonVisible="Collapsed"
+                        OpenPaneLength="195"
+                        IsPaneOpen="False"
+                        PaneDisplayMode="LeftCompact"
+                        IsSettingsVisible="False"
+                        SelectionChanged="RootNavigation_SelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Chat"
+                                    Tag="ChatPage"
+                                    Icon="Message"/>
+                <NavigationViewItem Content="Local Server"
+                                    Tag="ServerHostPage">
+                    <NavigationViewItem.Icon>
+                        <ic:SymbolIcon Symbol="Server"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem Content="Settings"
+                                    Tag="SettingsPage"
+                                    Icon="Setting"/>
+                <NavigationViewItem Content="About"
+                                    Tag="AboutPage">
+                    <NavigationViewItem.Icon>
+                        <ic:SymbolIcon Symbol="Info"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+            <Frame x:Name="ContentFrame"
+                   Padding="8,8,8,17"/>
+        </NavigationView>
+    </Grid>
+</Window>

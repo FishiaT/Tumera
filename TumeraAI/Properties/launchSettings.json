@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "TumeraAI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "TumeraAI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

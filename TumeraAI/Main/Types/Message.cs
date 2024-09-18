@@ -1,0 +1,25 @@
+﻿using System;
+using System.Collections.Generic;
+using TumeraAI.Main.Utils;
+
+namespace TumeraAI.Main.Types
+{
+    public class Message
+    {
+        public Roles Role { get; set; }
+        public string RoleName => Role.ToString();
+        public DateTime Time => DateTime.Now;
+        public string FormattedTime => Time.ToString("hh:mm tt");
+        public Dictionary<int, string> Contents { get; set; }
+        public int ContentIndex = 0;
+        public string Content = "";
+        public Dictionary<string, object> Metadata { get; set; }
+        public bool ShowMetadata { get; set; }
+        public List<Message> History { get; set; }
+
+        public Message(bool showMetadata = false)
+        {
+            this.ShowMetadata = showMetadata;
+        }
+    }
+}
