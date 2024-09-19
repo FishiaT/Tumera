@@ -61,7 +61,7 @@
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>
             <Frame x:Name="ContentFrame"
-                   Padding="8,8,8,17"/>
+                   Padding="0,8,10,17"/>
         </NavigationView>
     </Grid>
 </Window>

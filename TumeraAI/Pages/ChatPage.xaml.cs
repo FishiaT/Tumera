@@ -71,7 +71,7 @@ namespace TumeraAI.Pages
                 ContentDialogResult result = await noOAI.ShowAsync();
                 return;
             }
-            if (ChatHistoryListView.SelectedIndex < 0)
+            if (ChatSessionsListView.SelectedIndex < 0)
             {
                 ContentDialog noSession = new ContentDialog
                 {
@@ -122,14 +122,14 @@ namespace TumeraAI.Pages
                     message.Role = Roles.SYSTEM;
                     break;
             }
-            Sessions[ChatHistoryListView.SelectedIndex].Messages.Add(message);
+            Sessions[ChatSessionsListView.SelectedIndex].Messages.Add(message);
             PromptTextBox.Text = "";
             List<ChatMessage> messages = new List<ChatMessage>();
             if (!string.IsNullOrEmpty(RuntimeConfig.SystemPrompt))
             {
                 messages.Add(ChatMessage.CreateSystemMessage(RuntimeConfig.SystemPrompt));
             }
-            foreach (Message msg in Sessions[ChatHistoryListView.SelectedIndex].Messages.ToList())
+            foreach (Message msg in Sessions[ChatSessionsListView.SelectedIndex].Messages.ToList())
             {
                 switch (msg.Role)
                 {
@@ -164,15 +164,15 @@ namespace TumeraAI.Pages
                     {
                         response.Content = i.Text;
                     }
-                    Sessions[ChatHistoryListView.SelectedIndex].Messages.Add(response);
+                    Sessions[ChatSessionsListView.SelectedIndex].Messages.Add(response);
                     RuntimeConfig.IsInferencing = false;
                     TaskRing.IsIndeterminate = false;
                 }
                 else
                 {
                     response.Content = "";
-                    var index = Sessions[ChatHistoryListView.SelectedIndex].Messages.Count;
-                    Sessions[ChatHistoryListView.SelectedIndex].Messages.Add(response);
+                    var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.Count;
+                    Sessions[ChatSessionsListView.SelectedIndex].Messages.Add(response);
                     AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
                     await foreach (StreamingChatCompletionUpdate chunk in streamResponse)
                     {
@@ -182,8 +182,8 @@ namespace TumeraAI.Pages
                             //causes flickering atm, will figure out fix later
                             Message newRes = new Message();
                             newRes.Role = Roles.ASSISTANT;
-                            newRes.Content = Sessions[ChatHistoryListView.SelectedIndex].Messages[index].Content + chunkPart.Text;
-                            Sessions[ChatHistoryListView.SelectedIndex].Messages[index] = newRes;
+                            newRes.Content = Sessions[ChatSessionsListView.SelectedIndex].Messages[index].Content + chunkPart.Text;
+                            Sessions[ChatSessionsListView.SelectedIndex].Messages[index] = newRes;
                         }
                     }
                     RuntimeConfig.IsInferencing = false;
@@ -210,7 +210,7 @@ namespace TumeraAI.Pages
             //}
         }
 
-        private void NewChatButton_Click(object sender, RoutedEventArgs e)
+        private void NewSessionButton_Click(object sender, RoutedEventArgs e)
         {
             if (RuntimeConfig.IsInferencing)
             {
@@ -225,7 +225,7 @@ namespace TumeraAI.Pages
             Sessions.Add(session);
         }
 
-        private void DuplicateSessionBtn_Click(object sender, RoutedEventArgs e)
+        private void DuplicateSessionButton_Click(object sender, RoutedEventArgs e)
         {
             if (RuntimeConfig.IsInferencing)
             {
@@ -242,7 +242,7 @@ namespace TumeraAI.Pages
             Sessions.Add(dupSession);
         }
 
-        private void DeleteSessionBtn_Click(object sender, RoutedEventArgs e)
+        private void DeleteSessionButton_Click(object sender, RoutedEventArgs e)
         {
             if (RuntimeConfig.IsInferencing)
             {
@@ -250,7 +250,7 @@ namespace TumeraAI.Pages
             }
             var item = (sender as FrameworkElement).DataContext;
             var session = item as ChatSession;
-            Sessions[ChatHistoryListView.SelectedIndex].Messages.Clear();
+            Sessions[ChatSessionsListView.SelectedIndex].Messages.Clear();
             Sessions.Remove(session);
         }
 
@@ -268,7 +268,6 @@ namespace TumeraAI.Pages
                 RuntimeConfig.EndpointAPIKey = "";
                 RuntimeConfig.IsConnected = false;
                 APIConnectButton.Content = "Connect";
-                ConnectionStatus.Text = "No OpenAI-compatible endpoint connected";
                 Models.Clear();
                 return;
             }
@@ -297,7 +296,6 @@ namespace TumeraAI.Pages
                     Endpoint = new Uri(RuntimeConfig.EndpointURL)
                 });
                 ModelTextBlock.Text = "Connected";
-                ConnectionStatus.Text = "Model";
                 APIConnectButton.Content = "Disconnect";
                 RuntimeConfig.IsConnected = true;
                 
@@ -309,26 +307,24 @@ namespace TumeraAI.Pages
             }
         }
 
-        private void ChatHistoryListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ChatSessionsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (RuntimeConfig.IsInferencing)
             {
                 return;
             }
-            MessagesListView.ItemsSource = Sessions[ChatHistoryListView.SelectedIndex].Messages;
+            MessagesListView.ItemsSource = Sessions[ChatSessionsListView.SelectedIndex].Messages;
         }
 
-        private void ClearHistoryButton_Click(object sender, RoutedEventArgs e)
+        private void DeleteAllSessionsButton_Click(object sender, RoutedEventArgs e)
         {
             if (RuntimeConfig.IsInferencing)
             {
-                ClearHistoryButton.Flyout.Hide();
+                DeleteAllSessionsButton.Flyout.Hide();
                 return;
             }
-            ChatHistoryListView.Items.Clear();
-            MessagesListView.Items.Clear();
             Sessions.Clear();
-            ClearHistoryButton.Flyout.Hide();
+            DeleteAllSessionsButton.Flyout.Hide();
         }
     }
 }
