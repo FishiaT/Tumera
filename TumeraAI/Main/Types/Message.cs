@@ -13,12 +13,6 @@ namespace TumeraAI.Main.Types
         public List<string> Contents { get; set; }
         public int ContentIndex = 0;
         public string Content = "";
-        public Dictionary<string, object> Metadata { get; set; }
-        public bool ShowMetadata { get; set; }
-
-        public Message(bool showMetadata = false)
-        {
-            this.ShowMetadata = showMetadata;
-        }
+        public string ModelUsed = "";
     }
 }

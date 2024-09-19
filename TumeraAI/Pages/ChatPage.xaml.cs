@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using OpenAI;
 using OpenAI.Chat;
 using System;
@@ -28,6 +29,19 @@ namespace TumeraAI.Pages
             this.InitializeComponent();
             Sessions = new ObservableCollection<ChatSession>();
             Models = new ObservableCollection<Model>();
+            var textBoxQuickSendKA = new KeyboardAccelerator
+            {
+                Key = VirtualKey.Enter,
+                Modifiers = VirtualKeyModifiers.None
+            };
+            textBoxQuickSendKA.Invoked += TextBoxQuickSendKA_Invoked;
+            PromptTextBox.KeyboardAccelerators.Add(textBoxQuickSendKA);
+        }
+
+        private void TextBoxQuickSendKA_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            Inference();
+            args.Handled = true;
         }
 
         private void RoleSwitchButton_Click(object sender, RoutedEventArgs e)
@@ -157,6 +171,7 @@ namespace TumeraAI.Pages
                 TaskRing.IsIndeterminate = true;
                 Message response = new Message();
                 response.Role = Roles.ASSISTANT;
+                response.ModelUsed = Models[currentIndex].Name;
                 var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[currentIndex].Identifier);
                 if (!RuntimeConfig.StreamResponse)
                 {
@@ -183,6 +198,7 @@ namespace TumeraAI.Pages
                             //causes flickering atm, will figure out fix later
                             Message newRes = new Message();
                             newRes.Role = Roles.ASSISTANT;
+                            newRes.ModelUsed = Sessions[currentIndex].Messages[index].ModelUsed;
                             newRes.Content = Sessions[currentIndex].Messages[index].Content + chunkPart.Text;
                             Sessions[currentIndex].Messages[index] = newRes;
                         }
@@ -198,32 +214,16 @@ namespace TumeraAI.Pages
             Inference();
         }
 
-        private void PromptTextBox_KeyUp(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
-        {
-            // to be implemented soon(tm)
-            //if (e.Key == Windows.System.VirtualKey.Enter)
-            //{
-            //    if (!Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down))
-            //    {
-            //        Inference();
-            //        e.Handled = true;
-            //    }
-            //}
-        }
-
         private void NewSessionButton_Click(object sender, RoutedEventArgs e)
         {
-            if (RuntimeConfig.IsInferencing)
-            {
-                return;
-            }
+            var currentCount = Sessions.Count;
             ChatSession session = new ChatSession();
             session.Name = "New Chat";
             session.Time = DateTime.Now;
             session.Id = $"chat_{RandomNumberGenerator.GetHexString(8, true)}";
-            session.Parameters = new Dictionary<string, object>();
             session.Messages = new ObservableCollection<Message>();
             Sessions.Add(session);
+            ChatSessionsListView.SelectedIndex = currentCount;
         }
 
         private void DuplicateSessionButton_Click(object sender, RoutedEventArgs e)
@@ -232,15 +232,16 @@ namespace TumeraAI.Pages
             {
                 return;
             }
+            var currentCount = Sessions.Count;
             var item = (sender as FrameworkElement).DataContext;
             var session = item as ChatSession;
             ChatSession dupSession = new ChatSession();
             dupSession.Name = session.Name;
             dupSession.Time = DateTime.Now;
             dupSession.Id = $"chat_{RandomNumberGenerator.GetHexString(8, true)}";
-            dupSession.Parameters = session.Parameters;
             dupSession.Messages = new ObservableCollection<Message>();
             Sessions.Add(dupSession);
+            ChatSessionsListView.SelectedIndex = currentCount;
         }
 
         private void DeleteSessionButton_Click(object sender, RoutedEventArgs e)
@@ -310,7 +311,10 @@ namespace TumeraAI.Pages
 
         private void ChatSessionsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            MessagesListView.ItemsSource = Sessions[ChatSessionsListView.SelectedIndex].Messages;
+            if (ChatSessionsListView.Items.Count > 0 && ChatSessionsListView.SelectedIndex >= 0)
+            {
+                MessagesListView.ItemsSource = Sessions[ChatSessionsListView.SelectedIndex].Messages;
+            }
         }
 
         private void DeleteAllSessionsButton_Click(object sender, RoutedEventArgs e)

@@ -14,7 +14,6 @@ namespace TumeraAI.Main.Types
         public string Name { get; set; }
         public string Id { get; set; }
         public DateTime Time { get; set; }
-        public Dictionary<String, object> Parameters { get; set; }
         public ObservableCollection<Message> Messages;
     }
 }
