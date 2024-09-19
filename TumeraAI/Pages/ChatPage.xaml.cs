@@ -107,6 +107,7 @@ namespace TumeraAI.Pages
                 ContentDialogResult result = await noSession.ShowAsync();
                 return;
             }
+            int currentIndex = ChatSessionsListView.SelectedIndex;
             Message message = new Message();
             message.Content = PromptTextBox.Text;
             message.ContentIndex = 0;
@@ -122,14 +123,14 @@ namespace TumeraAI.Pages
                     message.Role = Roles.SYSTEM;
                     break;
             }
-            Sessions[ChatSessionsListView.SelectedIndex].Messages.Add(message);
+            Sessions[currentIndex].Messages.Add(message);
             PromptTextBox.Text = "";
             List<ChatMessage> messages = new List<ChatMessage>();
             if (!string.IsNullOrEmpty(RuntimeConfig.SystemPrompt))
             {
                 messages.Add(ChatMessage.CreateSystemMessage(RuntimeConfig.SystemPrompt));
             }
-            foreach (Message msg in Sessions[ChatSessionsListView.SelectedIndex].Messages.ToList())
+            foreach (Message msg in Sessions[currentIndex].Messages.ToList())
             {
                 switch (msg.Role)
                 {
@@ -156,7 +157,7 @@ namespace TumeraAI.Pages
                 TaskRing.IsIndeterminate = true;
                 Message response = new Message();
                 response.Role = Roles.ASSISTANT;
-                var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[SelectedModelComboBox.SelectedIndex].Identifier);
+                var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[currentIndex].Identifier);
                 if (!RuntimeConfig.StreamResponse)
                 {
                     ChatCompletion aiResponse = await chatClient.CompleteChatAsync(messages, options);
@@ -164,15 +165,15 @@ namespace TumeraAI.Pages
                     {
                         response.Content = i.Text;
                     }
-                    Sessions[ChatSessionsListView.SelectedIndex].Messages.Add(response);
+                    Sessions[currentIndex].Messages.Add(response);
                     RuntimeConfig.IsInferencing = false;
                     TaskRing.IsIndeterminate = false;
                 }
                 else
                 {
                     response.Content = "";
-                    var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.Count;
-                    Sessions[ChatSessionsListView.SelectedIndex].Messages.Add(response);
+                    var index = Sessions[currentIndex].Messages.Count;
+                    Sessions[currentIndex].Messages.Add(response);
                     AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
                     await foreach (StreamingChatCompletionUpdate chunk in streamResponse)
                     {
@@ -182,8 +183,8 @@ namespace TumeraAI.Pages
                             //causes flickering atm, will figure out fix later
                             Message newRes = new Message();
                             newRes.Role = Roles.ASSISTANT;
-                            newRes.Content = Sessions[ChatSessionsListView.SelectedIndex].Messages[index].Content + chunkPart.Text;
-                            Sessions[ChatSessionsListView.SelectedIndex].Messages[index] = newRes;
+                            newRes.Content = Sessions[currentIndex].Messages[index].Content + chunkPart.Text;
+                            Sessions[currentIndex].Messages[index] = newRes;
                         }
                     }
                     RuntimeConfig.IsInferencing = false;
@@ -309,10 +310,6 @@ namespace TumeraAI.Pages
 
         private void ChatSessionsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (RuntimeConfig.IsInferencing)
-            {
-                return;
-            }
             MessagesListView.ItemsSource = Sessions[ChatSessionsListView.SelectedIndex].Messages;
         }
 
