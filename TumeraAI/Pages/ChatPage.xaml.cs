@@ -1,32 +1,33 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Animation;
-using Newtonsoft.Json.Linq;
+using OpenAI;
+using OpenAI.Chat;
 using System;
+using System.ClientModel;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Data;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 using TumeraAI.Main.API;
 using TumeraAI.Main.Types;
 using TumeraAI.Main.Utils;
-using Windows.ApplicationModel.Contacts;
+using Windows.Media.Protection.PlayReady;
+using Windows.System;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
-
+#pragma warning disable OPENAI001
 namespace TumeraAI.Pages
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class ChatPage : Page
     {
+        public ObservableCollection<ChatSession> Sessions { get; set; }
+        public ObservableCollection<Model> Models { get; set; }
         public ChatPage()
         {
             this.InitializeComponent();
+            Sessions = new ObservableCollection<ChatSession>();
+            Models = new ObservableCollection<Model>();
         }
 
         private void RoleSwitchButton_Click(object sender, RoutedEventArgs e)
@@ -49,11 +50,10 @@ namespace TumeraAI.Pages
                     RuntimeConfig.CurrentRole = Roles.USER;
                     RoleSwitchButton.Content = "User";
                     break;
-
             }
         }
 
-        private async void SendButton_Click(object sender, RoutedEventArgs e)
+        private async void Inference()
         {
             if (RuntimeConfig.IsInferencing)
             {
@@ -71,7 +71,7 @@ namespace TumeraAI.Pages
                 ContentDialogResult result = await noOAI.ShowAsync();
                 return;
             }
-            if (string.IsNullOrEmpty(RuntimeConfig.SelectedSession))
+            if (ChatHistoryListView.SelectedIndex < 0)
             {
                 ContentDialog noSession = new ContentDialog
                 {
@@ -81,6 +81,18 @@ namespace TumeraAI.Pages
                     CloseButtonText = "OK"
                 };
                 ContentDialogResult result = await noSession.ShowAsync();
+                return;
+            }
+            if (SelectedModelComboBox.SelectedIndex < 0)
+            {
+                ContentDialog noModel = new ContentDialog
+                {
+                    XamlRoot = MainWindow.GetRootGrid().XamlRoot,
+                    Title = "Error",
+                    Content = "No model selected.",
+                    CloseButtonText = "OK"
+                };
+                ContentDialogResult result = await noModel.ShowAsync();
                 return;
             }
             if (string.IsNullOrEmpty(PromptTextBox.Text))
@@ -98,7 +110,6 @@ namespace TumeraAI.Pages
             Message message = new Message();
             message.Content = PromptTextBox.Text;
             message.ContentIndex = 0;
-            message.History = (ChatHistoryListView.SelectedItem as ChatSession).Messages;
             switch ((Roles)Enum.Parse(typeof(Roles), RoleSwitchButton.Content.ToString().ToUpper()))
             {
                 case Roles.USER:
@@ -111,23 +122,89 @@ namespace TumeraAI.Pages
                     message.Role = Roles.SYSTEM;
                     break;
             }
-            MessagesListView.Items.Add(message);
-            (ChatHistoryListView.SelectedItem as ChatSession).Messages.Add(message);
+            Sessions[ChatHistoryListView.SelectedIndex].Messages.Add(message);
             PromptTextBox.Text = "";
+            List<ChatMessage> messages = new List<ChatMessage>();
+            if (!string.IsNullOrEmpty(RuntimeConfig.SystemPrompt))
+            {
+                messages.Add(ChatMessage.CreateSystemMessage(RuntimeConfig.SystemPrompt));
+            }
+            foreach (Message msg in Sessions[ChatHistoryListView.SelectedIndex].Messages.ToList())
+            {
+                switch (msg.Role)
+                {
+                    case Roles.USER:
+                        messages.Add(ChatMessage.CreateUserMessage(msg.Content));
+                        break;
+                    case Roles.ASSISTANT:
+                        messages.Add(ChatMessage.CreateAssistantMessage(msg.Content));
+                        break;
+                    case Roles.SYSTEM:
+                        messages.Add(ChatMessage.CreateSystemMessage(msg.Content));
+                        break;
+                }
+            }
+            ChatCompletionOptions options = new ChatCompletionOptions();
+            options.Seed = RuntimeConfig.Seed;
+            options.Temperature = RuntimeConfig.Temperature;
+            options.FrequencyPenalty = RuntimeConfig.FrequencyPenalty;
+            options.PresencePenalty = RuntimeConfig.PresencePenalty;
+            options.MaxTokens = RuntimeConfig.MaxTokens;
             if (RuntimeConfig.CurrentRole == Roles.USER)
             {
                 RuntimeConfig.IsInferencing = true;
                 TaskRing.IsIndeterminate = true;
-                var response = await OpenAI.ChatCompletion((ChatHistoryListView.SelectedItem as ChatSession).Messages, RuntimeConfig.EndpointURL, RuntimeConfig.EndpointAPIKey);
-                if ((bool)response["result"])
+                Message response = new Message();
+                response.Role = Roles.ASSISTANT;
+                var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[SelectedModelComboBox.SelectedIndex].Identifier);
+                if (!RuntimeConfig.StreamResponse)
                 {
-                    Message genResponse = new Message();
-                    genResponse.Content = (string)response["response"];
-                    genResponse.Role = Roles.ASSISTANT;
-                    MessagesListView.Items.Add(genResponse);
-                    (ChatHistoryListView.SelectedItem as ChatSession).Messages.Add(genResponse);
+                    ChatCompletion aiResponse = await chatClient.CompleteChatAsync(messages, options);
+                    foreach (var i in aiResponse.Content)
+                    {
+                        response.Content = i.Text;
+                    }
+                    Sessions[ChatHistoryListView.SelectedIndex].Messages.Add(response);
                     RuntimeConfig.IsInferencing = false;
                     TaskRing.IsIndeterminate = false;
+                }
+                else
+                {
+                    response.Content = "";
+                    var index = Sessions[ChatHistoryListView.SelectedIndex].Messages.Count;
+                    Sessions[ChatHistoryListView.SelectedIndex].Messages.Add(response);
+                    AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
+                    await foreach (StreamingChatCompletionUpdate chunk in streamResponse)
+                    {
+                        foreach (ChatMessageContentPart chunkPart in chunk.ContentUpdate)
+                        {
+                            //a hacky method to stream response
+                            //causes flickering atm, will figure out fix later
+                            Message newRes = new Message();
+                            newRes.Role = Roles.ASSISTANT;
+                            newRes.Content = Sessions[ChatHistoryListView.SelectedIndex].Messages[index].Content + chunkPart.Text;
+                            Sessions[ChatHistoryListView.SelectedIndex].Messages[index] = newRes;
+                        }
+                    }
+                    RuntimeConfig.IsInferencing = false;
+                    TaskRing.IsIndeterminate = false;
+                }
+            }
+        }
+
+        private void SendButton_Click(object sender, RoutedEventArgs e)
+        {
+            Inference();
+        }
+
+        private void PromptTextBox_KeyUp(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                if (!Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down))
+                {
+                    Inference();
+                    e.Handled = true;
                 }
             }
         }
@@ -142,10 +219,9 @@ namespace TumeraAI.Pages
             session.Name = "New Chat";
             session.Time = DateTime.Now;
             session.Id = $"chat_{RandomNumberGenerator.GetHexString(8, true)}";
-            session.Messages = new List<Message>();
             session.Parameters = new Dictionary<string, object>();
-            ChatHistoryListView.Items.Add(session);
-            RuntimeConfig.Sessions.Add(session.Id, session);
+            session.Messages = new ObservableCollection<Message>();
+            Sessions.Add(session);
         }
 
         private void DuplicateSessionBtn_Click(object sender, RoutedEventArgs e)
@@ -156,10 +232,13 @@ namespace TumeraAI.Pages
             }
             var item = (sender as FrameworkElement).DataContext;
             var session = item as ChatSession;
-            session.Time = DateTime.Now;
-            session.Id = $"chat_{RandomNumberGenerator.GetHexString(8, true)}";
-            ChatHistoryListView.Items.Add(session);
-            RuntimeConfig.Sessions.Add(session.Id, session);
+            ChatSession dupSession = new ChatSession();
+            dupSession.Name = session.Name;
+            dupSession.Time = DateTime.Now;
+            dupSession.Id = $"chat_{RandomNumberGenerator.GetHexString(8, true)}";
+            dupSession.Parameters = session.Parameters;
+            dupSession.Messages = new ObservableCollection<Message>();
+            Sessions.Add(dupSession);
         }
 
         private void DeleteSessionBtn_Click(object sender, RoutedEventArgs e)
@@ -170,12 +249,8 @@ namespace TumeraAI.Pages
             }
             var item = (sender as FrameworkElement).DataContext;
             var session = item as ChatSession;
-            if (ChatHistoryListView.SelectedItem == session)
-            {
-                MessagesListView.Items.Clear();
-            }
-            ChatHistoryListView.Items.Remove(session);
-            RuntimeConfig.Sessions.Remove(session.Id);
+            Sessions[ChatHistoryListView.SelectedIndex].Messages.Clear();
+            Sessions.Remove(session);
         }
 
         private async void APIConnectButton_Click(object sender, RoutedEventArgs e)
@@ -187,11 +262,13 @@ namespace TumeraAI.Pages
             if (RuntimeConfig.IsConnected)
             {
                 ModelTextBlock.Text = "Not Connected";
+                RuntimeConfig.OAIClient = null;
                 RuntimeConfig.EndpointURL = "";
                 RuntimeConfig.EndpointAPIKey = "";
                 RuntimeConfig.IsConnected = false;
                 APIConnectButton.Content = "Connect";
                 ConnectionStatus.Text = "No OpenAI-compatible endpoint connected";
+                Models.Clear();
                 return;
             }
             if (string.IsNullOrEmpty(URLTextBox.Text))
@@ -199,54 +276,57 @@ namespace TumeraAI.Pages
                 ModelTextBlock.Text = "URL missing!";
                 return;
             }
-            Dictionary<string, object> res = await OpenAI.CheckEndpointAndGetModelsAsync(URLTextBox.Text, APIKeyTextBox.Text);
+            Dictionary<string, object> res = await OAIWrapper.CheckEndpointAndGetModelsAsync(RuntimeConfig.EndpointURL, RuntimeConfig.EndpointAPIKey);
             if ((bool)res["result"])
             {
+                foreach (var m in (List<string>)res["models"])
+                {
+                    Model model = new Model();
+                    model.Name = Path.GetFileNameWithoutExtension(m);
+                    model.Identifier = m;
+                    Models.Add(model);
+                }
+                string apiKey = RuntimeConfig.EndpointAPIKey;
+                if (string.IsNullOrEmpty(RuntimeConfig.EndpointAPIKey))
+                {
+                    apiKey = "placeholder_just_for_this";
+                }
+                RuntimeConfig.OAIClient = new OpenAIClient(apiKey, new()
+                {
+                    Endpoint = new Uri(RuntimeConfig.EndpointURL)
+                });
                 ModelTextBlock.Text = "Connected";
-                RuntimeConfig.EndpointURL = URLTextBox.Text;
-                RuntimeConfig.EndpointAPIKey = APIKeyTextBox.Text;
-                RuntimeConfig.IsConnected = true;
+                ConnectionStatus.Text = "Model";
                 APIConnectButton.Content = "Disconnect";
-                ConnectionStatus.Text = $"Connected ({Path.GetFileNameWithoutExtension((string)res["model"])})";
-                URLTextBox.Text = "";
-                APIKeyTextBox.Text = "";
+                RuntimeConfig.IsConnected = true;
+                
             }
             else
             {
-                ModelTextBlock.Text = "Connect failed";
+                ModelTextBlock.Text = "Connect failed!";
+                return;
             }
         }
 
         private void ChatHistoryListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            try
+            if (RuntimeConfig.IsInferencing)
             {
-                RuntimeConfig.SelectedSession = (ChatHistoryListView.SelectedItems[0] as ChatSession).Id;
-                MessagesListView.Items.Clear();
-                foreach (var item in (ChatHistoryListView.SelectedItems[0] as ChatSession).Messages)
-                {
-                    MessagesListView.Items.Add(item);
-                }
+                return;
             }
-            catch (COMException ex)
-            {
-                if (RuntimeConfig.Sessions.ContainsKey(RuntimeConfig.SelectedSession))
-                {
-                    RuntimeConfig.SelectedSession = "";
-                }
-            }
+            MessagesListView.ItemsSource = Sessions[ChatHistoryListView.SelectedIndex].Messages;
         }
 
         private void ClearHistoryButton_Click(object sender, RoutedEventArgs e)
         {
             if (RuntimeConfig.IsInferencing)
             {
+                ClearHistoryButton.Flyout.Hide();
                 return;
             }
             ChatHistoryListView.Items.Clear();
             MessagesListView.Items.Clear();
-            RuntimeConfig.SelectedSession = "";
-            RuntimeConfig.Sessions.Clear();
+            Sessions.Clear();
             ClearHistoryButton.Flyout.Hide();
         }
     }

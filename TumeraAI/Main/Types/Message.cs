@@ -10,12 +10,11 @@ namespace TumeraAI.Main.Types
         public string RoleName => Role.ToString();
         public DateTime Time => DateTime.Now;
         public string FormattedTime => Time.ToString("hh:mm tt");
-        public Dictionary<int, string> Contents { get; set; }
+        public List<string> Contents { get; set; }
         public int ContentIndex = 0;
         public string Content = "";
         public Dictionary<string, object> Metadata { get; set; }
         public bool ShowMetadata { get; set; }
-        public List<Message> History { get; set; }
 
         public Message(bool showMetadata = false)
         {

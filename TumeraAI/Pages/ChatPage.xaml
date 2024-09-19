@@ -55,7 +55,7 @@
                     <Button x:Name="NewChatButton"
                             Background="Transparent"
                             BorderThickness="0"
-                            ToolTipService.ToolTip="Initiate a new chat session"
+                            ToolTipService.ToolTip="Create a new chat session"
                             Click="NewChatButton_Click">
                         <StackPanel>
                             <ic:SymbolIcon Symbol="Add"/>
@@ -72,7 +72,8 @@
                     Margin="0,9,0,0">
                 <ListView x:Name="ChatHistoryListView"
                           Margin="0,5,0,0"
-                          SelectionChanged="ChatHistoryListView_SelectionChanged">
+                          SelectionChanged="ChatHistoryListView_SelectionChanged"
+                          ItemsSource="{x:Bind Sessions}">
                     <ListView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsStackPanel ItemsUpdatingScrollMode="KeepLastItemInView"/>
@@ -150,7 +151,7 @@
                                                       OffContent="Stream Responses"
                                                       OnContent="Stream Responses"
                                                       IsOn="{x:Bind utils:RuntimeConfig.StreamResponse, Mode=TwoWay}"
-                                                      ToolTipService.ToolTip="Output AI responses in real time as it's being generated instead of waiting for the full message. (Unimplemented at the moment.)"/>
+                                                      ToolTipService.ToolTip="Output AI responses in real time as it's being generated instead of waiting for the full message. The messages history will flicker during streaming, a fix is currently being figured out."/>
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Left">
                                                 <TextBlock Text="Seed"
@@ -239,12 +240,14 @@
                                         <TextBox x:Name="URLTextBox"
                                                  PlaceholderText="http://localhost:8080"
                                                  Width="195"
-                                                 Margin="0,6,0,0"/>
+                                                 Margin="0,6,0,0"
+                                                 Text="{x:Bind utils:RuntimeConfig.EndpointURL, Mode=TwoWay}"/>
                                         <TextBlock Text="API Key (optional)"
                                                    Margin="0,12,0,0"/>
                                         <TextBox x:Name="APIKeyTextBox"
                                                  Width="195"
-                                                 Margin="0,6,0,0"/>
+                                                 Margin="0,6,0,0"
+                                                 Text="{x:Bind utils:RuntimeConfig.EndpointAPIKey, Mode=TwoWay}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="1"
                                                 Orientation="Horizontal"
@@ -269,6 +272,11 @@
                                Text="No OpenAI-compatible endpoint connected"
                                Margin="0,8,0,0"
                                HorizontalAlignment="Right"/>
+                    <ComboBox x:Name="SelectedModelComboBox"
+                              Margin="8,4,0,0"
+                              Width="245"
+                              ItemsSource="{x:Bind Models}"
+                              DisplayMemberPath="Name"/>
                     <ProgressRing x:Name="TaskRing"
                                   IsIndeterminate="False"
                                   Width="16"
@@ -277,7 +285,7 @@
                 </StackPanel>
             </Grid>
             <Grid Grid.Row="1" 
-                  Margin="0,8,0,0">
+                  Margin="0,6,0,0">
                 <Grid>
                     <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -312,7 +320,8 @@
                                                                             TextWrapping="Wrap"
                                                                             IsTextSelectionEnabled="True"
                                                                             Background="Transparent"
-                                                                            UseSyntaxHighlighting="True"/>
+                                                                            UseSyntaxHighlighting="True"
+                                                                            Margin="0,8,0,0"/>
                                             </StackPanel>
                                         </Border>
                                     </Grid>
@@ -343,7 +352,8 @@
                              MaxHeight="142.48"
                              AcceptsReturn="True"
                              TextWrapping="Wrap"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             KeyUp="PromptTextBox_KeyUp"/>
                     <Button x:Name="SendButton"
                             Margin="11,0,0,0"
                             Height="35.62"
