@@ -199,14 +199,15 @@ namespace TumeraAI.Pages
 
         private void PromptTextBox_KeyUp(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                if (!Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down))
-                {
-                    Inference();
-                    e.Handled = true;
-                }
-            }
+            // to be implemented soon(tm)
+            //if (e.Key == Windows.System.VirtualKey.Enter)
+            //{
+            //    if (!Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down))
+            //    {
+            //        Inference();
+            //        e.Handled = true;
+            //    }
+            //}
         }
 
         private void NewChatButton_Click(object sender, RoutedEventArgs e)
