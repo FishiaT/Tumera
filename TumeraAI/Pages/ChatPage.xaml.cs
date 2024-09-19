@@ -211,6 +211,7 @@ namespace TumeraAI.Pages
                     if (!regenerate) Sessions[currentIndex].Messages.Add(response);
                     AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
                     var curMsg = Sessions[currentIndex].Messages[rIndex];
+                    curMsg.Content = "";
                     await foreach (StreamingChatCompletionUpdate chunk in streamResponse)
                     {
                         foreach (ChatMessageContentPart chunkPart in chunk.ContentUpdate)
