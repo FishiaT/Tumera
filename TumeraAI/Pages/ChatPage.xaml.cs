@@ -199,8 +199,6 @@ namespace TumeraAI.Pages
                 else
                 {
                     response.Content = "";
-                    if (!regenerate) Sessions[currentIndex].Messages.Add(response);
-                    AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
                     int rIndex;
                     if (!regenerate)
                     {
@@ -210,6 +208,8 @@ namespace TumeraAI.Pages
                     {
                         rIndex = msgIndex;
                     }
+                    if (!regenerate) Sessions[currentIndex].Messages.Add(response);
+                    AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
                     var curMsg = Sessions[currentIndex].Messages[rIndex];
                     await foreach (StreamingChatCompletionUpdate chunk in streamResponse)
                     {

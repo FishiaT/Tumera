@@ -37,11 +37,11 @@ namespace TumeraAI.Main.API
             else
             {
                 //definitely not confusing at all
+                resParam.Add("result", true);
                 var modelList = (JArray)res["data"];
                 var realModellist = new List<string>();
                 foreach (var model in modelList)
                 {
-                    resParam.Add("result", true);
                     realModellist.Add(((JValue)model["id"]).Value.ToString());
                     
                 }
