@@ -11,8 +11,10 @@ namespace TumeraAI.Main.Types
         public DateTime Time => DateTime.Now;
         public string FormattedTime => Time.ToString("hh:mm tt");
         public List<string> Contents { get; set; }
-        public int ContentIndex = 0;
+        public int ContentIndex = 1;
         public string Content = "";
+        public bool MultipleResponsesPanelVisible => (Contents?.Count ?? 0) > 1;
+        public bool IsAIResponse => Role == Roles.ASSISTANT;
         public string ModelUsed = "";
     }
 }

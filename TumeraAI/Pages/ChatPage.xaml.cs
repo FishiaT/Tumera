@@ -14,6 +14,7 @@ using System.Security.Cryptography;
 using TumeraAI.Main.API;
 using TumeraAI.Main.Types;
 using TumeraAI.Main.Utils;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Media.Protection.PlayReady;
 using Windows.System;
 
@@ -67,7 +68,7 @@ namespace TumeraAI.Pages
             }
         }
 
-        private async void Inference()
+        private async void Inference(int msgIndex = 0, bool regenerate = false)
         {
             if (RuntimeConfig.IsInferencing)
             {
@@ -109,7 +110,7 @@ namespace TumeraAI.Pages
                 ContentDialogResult result = await noModel.ShowAsync();
                 return;
             }
-            if (string.IsNullOrEmpty(PromptTextBox.Text))
+            if (string.IsNullOrEmpty(PromptTextBox.Text) && !regenerate)
             {
                 ContentDialog noSession = new ContentDialog
                 {
@@ -137,15 +138,17 @@ namespace TumeraAI.Pages
                     message.Role = Roles.SYSTEM;
                     break;
             }
-            Sessions[currentIndex].Messages.Add(message);
+            if (!regenerate) Sessions[currentIndex].Messages.Add(message);
             PromptTextBox.Text = "";
             List<ChatMessage> messages = new List<ChatMessage>();
             if (!string.IsNullOrEmpty(RuntimeConfig.SystemPrompt))
             {
                 messages.Add(ChatMessage.CreateSystemMessage(RuntimeConfig.SystemPrompt));
             }
+            int curIndex = 0;
             foreach (Message msg in Sessions[currentIndex].Messages.ToList())
             {
+                if (curIndex == msgIndex && regenerate) break;
                 switch (msg.Role)
                 {
                     case Roles.USER:
@@ -158,13 +161,8 @@ namespace TumeraAI.Pages
                         messages.Add(ChatMessage.CreateSystemMessage(msg.Content));
                         break;
                 }
+                curIndex++;
             }
-            ChatCompletionOptions options = new ChatCompletionOptions();
-            options.Seed = RuntimeConfig.Seed;
-            options.Temperature = RuntimeConfig.Temperature;
-            options.FrequencyPenalty = RuntimeConfig.FrequencyPenalty;
-            options.PresencePenalty = RuntimeConfig.PresencePenalty;
-            options.MaxTokens = RuntimeConfig.MaxTokens;
             if (RuntimeConfig.CurrentRole == Roles.USER)
             {
                 RuntimeConfig.IsInferencing = true;
@@ -172,7 +170,14 @@ namespace TumeraAI.Pages
                 Message response = new Message();
                 response.Role = Roles.ASSISTANT;
                 response.ModelUsed = Models[currentIndex].Name;
+                response.Contents = new List<string>();
                 var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[currentIndex].Identifier);
+                ChatCompletionOptions options = new ChatCompletionOptions();
+                options.Seed = RuntimeConfig.Seed;
+                options.Temperature = RuntimeConfig.Temperature;
+                options.FrequencyPenalty = RuntimeConfig.FrequencyPenalty;
+                options.PresencePenalty = RuntimeConfig.PresencePenalty;
+                options.MaxTokens = RuntimeConfig.MaxTokens;
                 if (!RuntimeConfig.StreamResponse)
                 {
                     ChatCompletion aiResponse = await chatClient.CompleteChatAsync(messages, options);
@@ -180,16 +185,32 @@ namespace TumeraAI.Pages
                     {
                         response.Content = i.Text;
                     }
-                    Sessions[currentIndex].Messages.Add(response);
+                    response.Contents.Add(response.Content);
+                    if (!regenerate)
+                    {
+                        Sessions[currentIndex].Messages.Add(response);
+                    }
+                    else {
+                        Sessions[currentIndex].Messages[msgIndex] = response;
+                    }
                     RuntimeConfig.IsInferencing = false;
                     TaskRing.IsIndeterminate = false;
                 }
                 else
                 {
                     response.Content = "";
-                    var index = Sessions[currentIndex].Messages.Count;
-                    Sessions[currentIndex].Messages.Add(response);
+                    if (!regenerate) Sessions[currentIndex].Messages.Add(response);
                     AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
+                    int rIndex;
+                    if (!regenerate)
+                    {
+                        rIndex = Sessions[currentIndex].Messages.Count;
+                    }
+                    else
+                    {
+                        rIndex = msgIndex;
+                    }
+                    var curMsg = Sessions[currentIndex].Messages[rIndex];
                     await foreach (StreamingChatCompletionUpdate chunk in streamResponse)
                     {
                         foreach (ChatMessageContentPart chunkPart in chunk.ContentUpdate)
@@ -198,11 +219,14 @@ namespace TumeraAI.Pages
                             //causes flickering atm, will figure out fix later
                             Message newRes = new Message();
                             newRes.Role = Roles.ASSISTANT;
-                            newRes.ModelUsed = Sessions[currentIndex].Messages[index].ModelUsed;
-                            newRes.Content = Sessions[currentIndex].Messages[index].Content + chunkPart.Text;
-                            Sessions[currentIndex].Messages[index] = newRes;
+                            newRes.ModelUsed = curMsg.ModelUsed;
+                            newRes.Content = curMsg.Content + chunkPart.Text;
+                            newRes.Contents = curMsg.Contents;
+                            Sessions[currentIndex].Messages[rIndex] = newRes;
+                            curMsg = newRes;
                         }
                     }
+                    Sessions[currentIndex].Messages[rIndex].Contents.Add(Sessions[currentIndex].Messages[rIndex].Content);
                     RuntimeConfig.IsInferencing = false;
                     TaskRing.IsIndeterminate = false;
                 }
@@ -326,6 +350,27 @@ namespace TumeraAI.Pages
             }
             Sessions.Clear();
             DeleteAllSessionsButton.Flyout.Hide();
+        }
+
+        private void CopyContentButton_Click(object sender, RoutedEventArgs e)
+        {
+            var item = (sender as FrameworkElement).DataContext;
+            var message = item as Message;
+            var pkg = new DataPackage();
+            pkg.SetText(message.Content);
+            Clipboard.SetContent(pkg);
+        }
+
+        private void RegenerateButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (RuntimeConfig.IsInferencing)
+            {
+                return;
+            }
+            var item = (sender as FrameworkElement).DataContext;
+            var message = item as Message;
+            var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.IndexOf(message);
+            Inference(index, true);
         }
     }
 }

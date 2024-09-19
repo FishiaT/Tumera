@@ -182,7 +182,7 @@
                               ItemsSource="{x:Bind Models}"
                               DisplayMemberPath="Name"/>
                     <ProgressRing x:Name="TaskRing"
-                                  IsIndeterminate="False"
+                                  IsIndeterminate="{x:Bind utils:RuntimeConfig.IsInferencing, Mode=OneWay}"
                                   Width="16"
                                   Height="16"
                                   Margin="12,5,0,0"/>
@@ -353,6 +353,7 @@
                                                     <Button x:Name="CopyContentButton"
                                                             Background="Transparent"
                                                             BorderThickness="0"
+                                                            Click="CopyContentButton_Click"
                                                             ToolTipService.ToolTip="Copy message contents to clipboard">
                                                         <StackPanel>
                                                             <ic:SymbolIcon Symbol="Clipboard"
@@ -368,12 +369,23 @@
                                                                    Margin="0,1,0,0"/>
                                                         </StackPanel>
                                                     </Button>
+                                                    <Button x:Name="DeleteMessageButton"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            ToolTipService.ToolTip="Delete the message">
+                                                        <StackPanel>
+                                                            <ic:SymbolIcon Symbol="Delete"
+                                                                   Margin="0,1,0,0"/>
+                                                        </StackPanel>
+                                                    </Button>
                                                     <StackPanel x:Name="AIResponseActionsStackPanel"
-                                                                Orientation="Horizontal">
+                                                                Orientation="Horizontal"
+                                                                Visibility="{x:Bind IsAIResponse, Converter={StaticResource BoolToVisibilityConverter}}">
                                                         <AppBarSeparator Margin="8,0,8,0"/>
                                                         <Button x:Name="RegenerateButton"
                                                                 Background="Transparent"
                                                                 BorderThickness="0"
+                                                                Click="RegenerateButton_Click"
                                                                 ToolTipService.ToolTip="Regenerate AI response">
                                                                 <StackPanel>
                                                                     <ic:SymbolIcon Symbol="ArrowClockwise"
@@ -390,7 +402,8 @@
                                                                 </StackPanel>
                                                         </Button>
                                                         <StackPanel x:Name="MultipleResponsesActionsStackPanel"
-                                                                    Orientation="Horizontal">
+                                                                    Orientation="Horizontal"
+                                                                    Visibility="{x:Bind MultipleResponsesPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                                                             <Button x:Name="PreviousIterationButton"
                                                                     Background="Transparent"
                                                                     BorderThickness="0"
@@ -402,9 +415,9 @@
                                                             </Button>
                                                             <TextBlock VerticalAlignment="Center"
                                                                        Margin="7,0,7,0">
-                                                                <Run Text="1"/>
+                                                                <Run Text="{x:Bind ContentIndex}"/>
                                                                 <Run Text="/"/>
-                                                                <Run Text="30"/>
+                                                                <Run Text="{x:Bind Path=Contents.Count}"/>
                                                             </TextBlock>
                                                             <Button x:Name="NextIterationButton"
                                                                     Background="Transparent"

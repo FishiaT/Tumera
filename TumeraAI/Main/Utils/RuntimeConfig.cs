@@ -14,7 +14,7 @@ namespace TumeraAI.Main.Utils
         public static OpenAIClient OAIClient;
         public static Roles CurrentRole = Roles.USER;
         public static bool IsInferencing = false;
-        public static string SystemPrompt = "You are a helpful AI assistant.";
+        public static string SystemPrompt = "";
         public static bool StreamResponse = false;
         public static int Seed = -1;
         public static float Temperature = 1;
