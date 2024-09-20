@@ -22,6 +22,15 @@
                 <StackPanel Orientation="Horizontal" 
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">
+                    <Button Margin="6,0,0,0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            ToolTipService.ToolTip="Stop generating response"
+                            Visibility="{x:Bind Path=utils:RuntimeConfig.IsInferencing, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <ic:SymbolIcon Symbol="Stop"/>
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="InferenceConfigButton"
                             Margin="6,0,0,0"
                             Height="35.62"
@@ -173,9 +182,6 @@
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
-                    <TextBlock Text="Model"
-                               Margin="0,8,0,0"
-                               HorizontalAlignment="Right"/>
                     <ComboBox x:Name="SelectedModelComboBox"
                               Margin="8,4,0,0"
                               Width="290"
@@ -300,146 +306,149 @@
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1,1,1,0"
                             CornerRadius="8">
-                        <ListView x:Name="MessagesListView"
+                        <Grid>
+                            <ListView x:Name="MessagesListView"
                                   SelectionMode="None"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto">
-                            <ListView.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <ItemsStackPanel ItemsUpdatingScrollMode="KeepLastItemInView"/>
-                                </ItemsPanelTemplate>
-                            </ListView.ItemsPanel>
-                            <ListView.ItemTemplate>
-                                <DataTemplate x:DataType="types:Message">
-                                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                <ListView.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <ItemsStackPanel ItemsUpdatingScrollMode="KeepLastItemInView"/>
+                                    </ItemsPanelTemplate>
+                                </ListView.ItemsPanel>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="types:Message">
+                                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                             BorderThickness="1,1,1,0"
                                             CornerRadius="8"
                                             Padding="12,8,12,8"
                                             Margin="0,10,0,0">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-                                            <Grid Grid.Row="0">
-                                                <StackPanel Grid.Row="0">
-                                                    <TextBlock>
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid Grid.Row="0">
+                                                    <StackPanel Grid.Row="0">
+                                                        <TextBlock>
                                                         <Run Text="{x:Bind RoleName}"
                                                              FontWeight="Bold"/>
                                                         <Run Text="{x:Bind FormattedTime}"
                                                              FontSize="11"/>
-                                                    </TextBlock>
-                                                    <controls:MarkdownTextBlock Text="{x:Bind Content}"
-                                                                                TextWrapping="Wrap"
-                                                                                IsTextSelectionEnabled="True"
-                                                                                Background="Transparent"
-                                                                                UseSyntaxHighlighting="True"
-                                                                                Margin="0,8,0,0"/>
-                                                </StackPanel>
-                                            </Grid>
-                                            <Grid Grid.Row="1"
-                                                  Margin="0,25,0,0">
-                                                <StackPanel Grid.Row="1"
-                                                            Orientation="Horizontal"
-                                                            HorizontalAlignment="Left"
-                                                            VerticalAlignment="Bottom">
-                                                    <TextBlock Text="{x:Bind ModelUsed}"
-                                                               FontSize="10"/>
-                                                </StackPanel>
-                                                <StackPanel Grid.Row="1"
-                                                            Orientation="Horizontal"
-                                                            HorizontalAlignment="Right"
-                                                            VerticalAlignment="Top">
-                                                    <Button x:Name="CopyContentButton"
-                                                            Background="Transparent"
-                                                            BorderThickness="0"
-                                                            Click="CopyContentButton_Click"
-                                                            ToolTipService.ToolTip="Copy message contents to clipboard">
-                                                        <StackPanel>
-                                                            <ic:SymbolIcon Symbol="Clipboard"
-                                                                   Margin="0,1,0,0"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button x:Name="EditContentButton"
-                                                            Background="Transparent"
-                                                            BorderThickness="0"
-                                                            ToolTipService.ToolTip="Edit message content">
-                                                        <StackPanel>
-                                                            <ic:SymbolIcon Symbol="Edit"
-                                                                   Margin="0,1,0,0"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button x:Name="DeleteMessageButton"
-                                                            Background="Transparent"
-                                                            BorderThickness="0"
-                                                            Click="DeleteMessageButton_Click"
-                                                            ToolTipService.ToolTip="Delete the message">
-                                                        <StackPanel>
-                                                            <ic:SymbolIcon Symbol="Delete"
-                                                                   Margin="0,1,0,0"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <StackPanel x:Name="AIResponseActionsStackPanel"
+                                                        </TextBlock>
+                                                        <controls:MarkdownTextBlock Text="{x:Bind Content}"
+                                                                                    TextWrapping="Wrap"
+                                                                                    IsTextSelectionEnabled="True"
+                                                                                    Background="Transparent"
+                                                                                    UseSyntaxHighlighting="True"
+                                                                                    Margin="0,8,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <Grid Grid.Row="1"
+                                                      Margin="0,25,0,0">
+                                                    <StackPanel Grid.Row="1"
                                                                 Orientation="Horizontal"
-                                                                Visibility="{x:Bind IsAIResponse, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                        <AppBarSeparator Margin="8,0,8,0"/>
-                                                        <Button x:Name="RegenerateButton"
+                                                                HorizontalAlignment="Left"
+                                                                VerticalAlignment="Bottom">
+                                                        <TextBlock Text="{x:Bind ModelUsed}"
+                                                                   FontSize="10"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Row="1"
+                                                                Orientation="Horizontal"
+                                                                HorizontalAlignment="Right"
+                                                                VerticalAlignment="Top">
+                                                        <Button x:Name="CopyContentButton"
                                                                 Background="Transparent"
                                                                 BorderThickness="0"
-                                                                Click="RegenerateButton_Click"
-                                                                ToolTipService.ToolTip="Regenerate AI response">
+                                                                Click="CopyContentButton_Click"
+                                                                ToolTipService.ToolTip="Copy message contents to clipboard">
+                                                            <StackPanel>
+                                                                <ic:SymbolIcon Symbol="Clipboard"
+                                                                               Margin="0,1,0,0"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button x:Name="EditContentButton"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                Click="EditContentButton_Click"
+                                                                ToolTipService.ToolTip="Edit message content">
+                                                            <StackPanel>
+                                                                <ic:SymbolIcon Symbol="Edit"
+                                                                               Margin="0,1,0,0"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button x:Name="DeleteMessageButton"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                Click="DeleteMessageButton_Click"
+                                                                ToolTipService.ToolTip="Delete the message">
+                                                            <StackPanel>
+                                                                <ic:SymbolIcon Symbol="Delete"
+                                                                               Margin="0,1,0,0"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <StackPanel x:Name="AIResponseActionsStackPanel"
+                                                                    Orientation="Horizontal"
+                                                                    Visibility="{x:Bind IsAIResponse, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                            <AppBarSeparator Margin="8,0,8,0"/>
+                                                            <Button x:Name="RegenerateButton"
+                                                                    Background="Transparent"
+                                                                    BorderThickness="0"
+                                                                    Click="RegenerateButton_Click"
+                                                                    ToolTipService.ToolTip="Regenerate AI response">
                                                                 <StackPanel>
                                                                     <ic:SymbolIcon Symbol="ArrowClockwise"
                                                                                    Margin="0,1,0,0"/>
                                                                 </StackPanel>
-                                                        </Button>
-                                                        <Button x:Name="ContinueGenerateButton"
-                                                                Background="Transparent"
-                                                                BorderThickness="0"
-                                                                ToolTipService.ToolTip="Continue generating the response">
+                                                            </Button>
+                                                            <Button x:Name="ContinueGenerateButton"
+                                                                    Background="Transparent"
+                                                                    BorderThickness="0"
+                                                                    ToolTipService.ToolTip="Continue generating the response">
                                                                 <StackPanel>
                                                                     <ic:SymbolIcon Symbol="ArrowRight"
                                                                                    Margin="0,1,0,0"/>
                                                                 </StackPanel>
-                                                        </Button>
-                                                        <StackPanel x:Name="MultipleResponsesActionsStackPanel"
-                                                                    Orientation="Horizontal"
-                                                                    Visibility="{x:Bind MultipleResponsesPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                            <Button x:Name="PreviousIterationButton"
-                                                                    Background="Transparent"
-                                                                    BorderThickness="0"
-                                                                    Click="PreviousIterationButton_Click"
-                                                                    ToolTipService.ToolTip="Switch to previous response iteration">
+                                                            </Button>
+                                                            <StackPanel x:Name="MultipleResponsesActionsStackPanel"
+                                                                        Orientation="Horizontal"
+                                                                        Visibility="{x:Bind MultipleResponsesPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                                <Button x:Name="PreviousIterationButton"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        Click="PreviousIterationButton_Click"
+                                                                        ToolTipService.ToolTip="Switch to previous response iteration">
                                                                     <StackPanel>
                                                                         <ic:SymbolIcon Symbol="ArrowHookUpLeft"
                                                                                        Margin="0,1,0,0"/>
                                                                     </StackPanel>
-                                                            </Button>
-                                                            <TextBlock VerticalAlignment="Center"
-                                                                       Margin="7,0,7,0">
-                                                                <Run Text="{x:Bind VisibleContentIndex}"/>
-                                                                <Run Text="/"/>
-                                                                <Run Text="{x:Bind Path=Contents.Count}"/>
-                                                            </TextBlock>
-                                                            <Button x:Name="NextIterationButton"
-                                                                    Background="Transparent"
-                                                                    BorderThickness="0"
-                                                                    Click="NextIterationButton_Click"
-                                                                    ToolTipService.ToolTip="Switch to next response iteration">
+                                                                </Button>
+                                                                <TextBlock VerticalAlignment="Center"
+                                                                           Margin="7,0,7,0">
+                                                                    <Run Text="{x:Bind VisibleContentIndex}"/>
+                                                                    <Run Text="/"/>
+                                                                    <Run Text="{x:Bind Path=Contents.Count}"/>
+                                                                </TextBlock>
+                                                                <Button x:Name="NextIterationButton"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        Click="NextIterationButton_Click"
+                                                                        ToolTipService.ToolTip="Switch to next response iteration">
                                                                     <StackPanel>
                                                                         <ic:SymbolIcon Symbol="ArrowHookUpRight"
                                                                                        Margin="0,1,0,0"/>
                                                                     </StackPanel>
-                                                            </Button>
+                                                                </Button>
+                                                            </StackPanel>
                                                         </StackPanel>
                                                     </StackPanel>
-                                                </StackPanel>
+                                                </Grid>
                                             </Grid>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Grid>
                     </Border>
                 </Grid>
             </Grid>

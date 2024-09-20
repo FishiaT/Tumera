@@ -1,3 +1,5 @@
+using CommunityToolkit.WinUI.UI;
+using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -9,9 +11,11 @@ using System;
 using System.ClientModel;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using TumeraAI.Main.API;
 using TumeraAI.Main.Types;
@@ -88,18 +92,6 @@ namespace TumeraAI.Pages
                 ContentDialogResult result = await noOAI.ShowAsync();
                 return;
             }
-            if (ChatSessionsListView.SelectedIndex < 0)
-            {
-                ContentDialog noSession = new ContentDialog
-                {
-                    XamlRoot = MainWindow.GetRootGrid().XamlRoot,
-                    Title = "Error",
-                    Content = "No chat session selected.",
-                    CloseButtonText = "OK"
-                };
-                ContentDialogResult result = await noSession.ShowAsync();
-                return;
-            }
             if (SelectedModelComboBox.SelectedIndex < 0)
             {
                 ContentDialog noModel = new ContentDialog
@@ -123,6 +115,10 @@ namespace TumeraAI.Pages
                 };
                 ContentDialogResult result = await noSession.ShowAsync();
                 return;
+            }
+            if (ChatSessionsListView.SelectedIndex < 0)
+            {
+                AddNewSession();
             }
             int currentIndex = ChatSessionsListView.SelectedIndex;
             Message message = new Message();
@@ -182,21 +178,26 @@ namespace TumeraAI.Pages
                 options.MaxTokens = RuntimeConfig.MaxTokens;
                 if (!RuntimeConfig.StreamResponse)
                 {
-                    
-                    ChatCompletion aiResponse = await chatClient.CompleteChatAsync(messages, options);
-                    foreach (var i in aiResponse.Content)
-                    {
-                        response.Content = i.Text;
-                    }
-                    response.Contents.Add(response.Content);
+                    int rIndex;
                     if (!regenerate)
                     {
-                        Sessions[currentIndex].Messages.Add(response);
+                        rIndex = Sessions[currentIndex].Messages.Count;
                     }
-                    else {
-                        response.ContentIndex = response.RealContentCount;
-                        Sessions[currentIndex].Messages[msgIndex] = response;
+                    else
+                    {
+                        rIndex = msgIndex;
                     }
+                    if (!regenerate) Sessions[currentIndex].Messages.Add(response);
+                    ChatCompletion aiResponse = await chatClient.CompleteChatAsync(messages, options);
+                    var curMsg = Sessions[currentIndex].Messages[rIndex];
+                    var newMsg = curMsg;
+                    foreach (var i in aiResponse.Content)
+                    {
+                        newMsg.Content = i.Text;
+                    }
+                    newMsg.Contents.Add(newMsg.Content);
+                    if (regenerate) newMsg.ContentIndex = newMsg.RealContentCount;
+                    Sessions[currentIndex].Messages[rIndex] = newMsg;
                     RuntimeConfig.IsInferencing = false;
                     TaskRing.IsIndeterminate = false;
                 }
@@ -220,8 +221,6 @@ namespace TumeraAI.Pages
                     {
                         foreach (ChatMessageContentPart chunkPart in chunk.ContentUpdate)
                         {
-                            //a hacky method to stream response
-                            //causes flickering atm, will figure out fix later
                             Message newRes = new Message();
                             newRes = curMsg;
                             newRes.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
@@ -245,8 +244,8 @@ namespace TumeraAI.Pages
         {
             Inference();
         }
-
-        private void NewSessionButton_Click(object sender, RoutedEventArgs e)
+        
+        private void AddNewSession()
         {
             var currentCount = Sessions.Count;
             ChatSession session = new ChatSession();
@@ -256,6 +255,11 @@ namespace TumeraAI.Pages
             session.Messages = new ObservableCollection<Message>();
             Sessions.Add(session);
             ChatSessionsListView.SelectedIndex = currentCount;
+        }
+
+        private void NewSessionButton_Click(object sender, RoutedEventArgs e)
+        {
+            AddNewSession();
         }
 
         private void DuplicateSessionButton_Click(object sender, RoutedEventArgs e)
@@ -432,6 +436,57 @@ namespace TumeraAI.Pages
                 newMsg.ContentIndex = newMsg.ContentIndex + 1;
                 newMsg.Content = newMsg.Contents[newMsg.ContentIndex];
                 Sessions[ChatSessionsListView.SelectedIndex].Messages[index] = newMsg;
+            }
+        }
+
+        private async void EditContentButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (RuntimeConfig.IsInferencing)
+            {
+                return;
+            }
+            var item = (sender as FrameworkElement).DataContext;
+            var message = item as Message;
+            var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.IndexOf(message);
+            TextBox msgTextBox = new TextBox
+            {
+                Height = 142.48,
+                MaxHeight = 142.48,
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap
+            };
+            ScrollViewer.SetVerticalScrollBarVisibility(msgTextBox, ScrollBarVisibility.Auto);
+            msgTextBox.Text = message.Content;
+            ContentDialog dialog = new ContentDialog
+            {
+                XamlRoot = MainWindow.GetRootGrid().XamlRoot,
+                Title = "Edit message",
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
+                Width = 300,
+                Content = new Grid
+                {
+                    ColumnDefinitions =
+                    {
+                        new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+                    },
+                    Children =
+                    {
+                        msgTextBox
+                    }
+                },
+                PrimaryButtonText = "Confirm",
+                CloseButtonText = "Cancel"
+            }; 
+
+            ContentDialogResult result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                if (!msgTextBox.Text.Equals(message.Content))
+                {
+                    var newMsg = message;
+                    newMsg.Content = msgTextBox.Text;
+                    Sessions[ChatSessionsListView.SelectedIndex].Messages[index] = newMsg;
+                }
             }
         }
     }
