@@ -1,6 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.VisualBasic;
 using OpenAI;
 using OpenAI.Chat;
 using System;
@@ -15,6 +17,7 @@ using TumeraAI.Main.API;
 using TumeraAI.Main.Types;
 using TumeraAI.Main.Utils;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Media.Control;
 using Windows.Media.Protection.PlayReady;
 using Windows.System;
 
@@ -23,13 +26,12 @@ namespace TumeraAI.Pages
 {
     public sealed partial class ChatPage : Page
     {
-        public ObservableCollection<ChatSession> Sessions { get; set; }
-        public ObservableCollection<Model> Models { get; set; }
+        public static ObservableCollection<ChatSession> Sessions = new ObservableCollection<ChatSession>();
+        public CollectionViewSource SessionsCollectionViewSource = new CollectionViewSource { Source = Sessions }; 
+        public ObservableCollection<Model> Models = new ObservableCollection<Model>();
         public ChatPage()
         {
             this.InitializeComponent();
-            Sessions = new ObservableCollection<ChatSession>();
-            Models = new ObservableCollection<Model>();
             var textBoxQuickSendKA = new KeyboardAccelerator
             {
                 Key = VirtualKey.Enter,
@@ -163,15 +165,15 @@ namespace TumeraAI.Pages
                 }
                 curIndex++;
             }
-            if (RuntimeConfig.CurrentRole == Roles.USER)
+            if (RuntimeConfig.CurrentRole == Roles.USER && !regenerate || regenerate)
             {
                 RuntimeConfig.IsInferencing = true;
                 TaskRing.IsIndeterminate = true;
                 Message response = new Message();
                 response.Role = Roles.ASSISTANT;
-                response.ModelUsed = Models[currentIndex].Name;
+                response.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
                 response.Contents = new List<string>();
-                var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[currentIndex].Identifier);
+                var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[SelectedModelComboBox.SelectedIndex].Identifier);
                 ChatCompletionOptions options = new ChatCompletionOptions();
                 options.Seed = RuntimeConfig.Seed;
                 options.Temperature = RuntimeConfig.Temperature;
@@ -180,6 +182,7 @@ namespace TumeraAI.Pages
                 options.MaxTokens = RuntimeConfig.MaxTokens;
                 if (!RuntimeConfig.StreamResponse)
                 {
+                    
                     ChatCompletion aiResponse = await chatClient.CompleteChatAsync(messages, options);
                     foreach (var i in aiResponse.Content)
                     {
@@ -191,6 +194,7 @@ namespace TumeraAI.Pages
                         Sessions[currentIndex].Messages.Add(response);
                     }
                     else {
+                        response.ContentIndex = response.RealContentCount;
                         Sessions[currentIndex].Messages[msgIndex] = response;
                     }
                     RuntimeConfig.IsInferencing = false;
@@ -219,15 +223,18 @@ namespace TumeraAI.Pages
                             //a hacky method to stream response
                             //causes flickering atm, will figure out fix later
                             Message newRes = new Message();
-                            newRes.Role = Roles.ASSISTANT;
-                            newRes.ModelUsed = curMsg.ModelUsed;
-                            newRes.Content = curMsg.Content + chunkPart.Text;
-                            newRes.Contents = curMsg.Contents;
+                            newRes = curMsg;
+                            newRes.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
+                            newRes.Content +=  chunkPart.Text;
                             Sessions[currentIndex].Messages[rIndex] = newRes;
                             curMsg = newRes;
                         }
                     }
-                    Sessions[currentIndex].Messages[rIndex].Contents.Add(Sessions[currentIndex].Messages[rIndex].Content);
+                    Message newResS = new Message();
+                    newResS = Sessions[currentIndex].Messages[rIndex];
+                    newResS.Contents.Add(Sessions[currentIndex].Messages[rIndex].Content);
+                    if (regenerate) newResS.ContentIndex = newResS.RealContentCount;
+                    Sessions[currentIndex].Messages[rIndex] = newResS;
                     RuntimeConfig.IsInferencing = false;
                     TaskRing.IsIndeterminate = false;
                 }
@@ -277,8 +284,13 @@ namespace TumeraAI.Pages
             }
             var item = (sender as FrameworkElement).DataContext;
             var session = item as ChatSession;
+            var curIndex = Sessions.IndexOf(session);
             Sessions[ChatSessionsListView.SelectedIndex].Messages.Clear();
             Sessions.Remove(session);
+            if (Sessions.Count >= 1)
+            {
+                ChatSessionsListView.SelectedIndex = curIndex - 1;
+            }
         }
 
         private async void APIConnectButton_Click(object sender, RoutedEventArgs e)
@@ -372,6 +384,55 @@ namespace TumeraAI.Pages
             var message = item as Message;
             var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.IndexOf(message);
             Inference(index, true);
+        }
+
+        private void DeleteMessageButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (RuntimeConfig.IsInferencing)
+            {
+                return;
+            }
+            var item = (sender as FrameworkElement).DataContext;
+            var message = item as Message;
+            Sessions[ChatSessionsListView.SelectedIndex].Messages.Remove(message);
+        }
+
+        private void PreviousIterationButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (RuntimeConfig.IsInferencing)
+            {
+                return;
+            }
+            var item = (sender as FrameworkElement).DataContext;
+            var message = item as Message;
+            var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.IndexOf(message);
+            var newMsg = new Message();
+            newMsg = message;
+            if (newMsg.ContentIndex -1 > -1)
+            {
+                newMsg.ContentIndex = newMsg.ContentIndex - 1;
+                newMsg.Content = newMsg.Contents[newMsg.ContentIndex];
+                Sessions[ChatSessionsListView.SelectedIndex].Messages[index] = newMsg;
+            }
+        }
+
+        private void NextIterationButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (RuntimeConfig.IsInferencing)
+            {
+                return;
+            }
+            var item = (sender as FrameworkElement).DataContext;
+            var message = item as Message;
+            var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.IndexOf(message);
+            var newMsg = new Message();
+            newMsg = message;
+            if (newMsg.ContentIndex + 1 <= newMsg.RealContentCount)
+            {
+                newMsg.ContentIndex = newMsg.ContentIndex + 1;
+                newMsg.Content = newMsg.Contents[newMsg.ContentIndex];
+                Sessions[ChatSessionsListView.SelectedIndex].Messages[index] = newMsg;
+            }
         }
     }
 }

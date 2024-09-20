@@ -57,7 +57,7 @@
                                                       OffContent="Stream Responses"
                                                       OnContent="Stream Responses"
                                                       IsOn="{x:Bind utils:RuntimeConfig.StreamResponse, Mode=TwoWay}"
-                                                      ToolTipService.ToolTip="Output AI responses in real time as it's being generated instead of waiting for the full message. The messages history will flicker during streaming, a fix is currently being figured out."/>
+                                                      ToolTipService.ToolTip="Output AI responses in real time as it's being generated instead of waiting for the full message."/>
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Left">
                                                 <TextBlock Text="Seed"
@@ -255,7 +255,7 @@
                                             <ListView x:Name="ChatSessionsListView"
                                                       Margin="0,5,0,0"
                                                       SelectionChanged="ChatSessionsListView_SelectionChanged"
-                                                      ItemsSource="{x:Bind Sessions}"
+                                                      ItemsSource="{x:Bind SessionsCollectionViewSource.View, Mode=OneWay}"
                                                       ScrollViewer.VerticalScrollBarVisibility="Auto">
                                                 <ListView.ItemsPanel>
                                                     <ItemsPanelTemplate>
@@ -372,6 +372,7 @@
                                                     <Button x:Name="DeleteMessageButton"
                                                             Background="Transparent"
                                                             BorderThickness="0"
+                                                            Click="DeleteMessageButton_Click"
                                                             ToolTipService.ToolTip="Delete the message">
                                                         <StackPanel>
                                                             <ic:SymbolIcon Symbol="Delete"
@@ -407,6 +408,7 @@
                                                             <Button x:Name="PreviousIterationButton"
                                                                     Background="Transparent"
                                                                     BorderThickness="0"
+                                                                    Click="PreviousIterationButton_Click"
                                                                     ToolTipService.ToolTip="Switch to previous response iteration">
                                                                     <StackPanel>
                                                                         <ic:SymbolIcon Symbol="ArrowHookUpLeft"
@@ -415,13 +417,14 @@
                                                             </Button>
                                                             <TextBlock VerticalAlignment="Center"
                                                                        Margin="7,0,7,0">
-                                                                <Run Text="{x:Bind ContentIndex}"/>
+                                                                <Run Text="{x:Bind VisibleContentIndex}"/>
                                                                 <Run Text="/"/>
                                                                 <Run Text="{x:Bind Path=Contents.Count}"/>
                                                             </TextBlock>
                                                             <Button x:Name="NextIterationButton"
                                                                     Background="Transparent"
                                                                     BorderThickness="0"
+                                                                    Click="NextIterationButton_Click"
                                                                     ToolTipService.ToolTip="Switch to next response iteration">
                                                                     <StackPanel>
                                                                         <ic:SymbolIcon Symbol="ArrowHookUpRight"
