@@ -6,7 +6,7 @@ namespace TumeraAI.Main.Utils
     internal class AppConfig
     {
         public static string AppName = "Tumera";
-        public static string AppVersion = "0.1.0a2";
+        public static string AppVersion = "0.1.0a3";
         public static string DefaultDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), $"{AppName}");
         public static string ModelsPath = Path.Combine(DefaultDataPath, "models");
         public static string BackendsPath = Path.Combine(DefaultDataPath, "backends");
