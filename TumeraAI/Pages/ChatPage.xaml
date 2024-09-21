@@ -12,100 +12,7 @@
     xmlns:ic="using:FluentIcons.WinUI"
     mc:Ignorable="d">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <Grid Grid.Row="0">
-                <StackPanel Grid.Row="0"
-                            Orientation="Horizontal" 
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Margin="8,0,0,0">
-                    <TextBlock Text="History"/>
-                </StackPanel>
-                <StackPanel Grid.Row="0"
-                            Orientation="Horizontal" 
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center">
-                    <Button x:Name="ClearHistoryButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            ToolTipService.ToolTip="Clear chat history">
-                        <Button.Flyout>
-                            <Flyout>
-                                <StackPanel Width="240">
-                                    <TextBlock Text="All past chat sessions will be permanently removed. This action is irreversible."
-                                               TextWrapping="WrapWholeWords"
-                                               Margin="0,0,0,12"/>
-                                    <Button Click="ClearHistoryButton_Click" 
-                                            Content="Proceed"/>
-                                </StackPanel>
-                            </Flyout>
-                        </Button.Flyout>
-                        <StackPanel>
-                            <ic:SymbolIcon Symbol="Delete"/>
-                        </StackPanel>
-                    </Button>
-                    <Button x:Name="NewChatButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            ToolTipService.ToolTip="Initiate a new chat session"
-                            Click="NewChatButton_Click">
-                        <StackPanel>
-                            <ic:SymbolIcon Symbol="Add"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Grid>
-            <Border Width="180"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1,1,1,0"
-                    CornerRadius="8"
-                    Grid.Row="1"
-                    Margin="0,9,0,0">
-                <ListView x:Name="ChatHistoryListView"
-                          Margin="0,5,0,0"
-                          SelectionChanged="ChatHistoryListView_SelectionChanged">
-                    <ListView.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <ItemsStackPanel ItemsUpdatingScrollMode="KeepLastItemInView"/>
-                        </ItemsPanelTemplate>
-                    </ListView.ItemsPanel>
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="types:ChatSession">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Vertical"
-                                            Grid.Column="0">
-                                    <StackPanel.ContextFlyout>
-                                        <MenuFlyout>
-                                            <MenuFlyoutItem Text="Duplicate" 
-                                                            Click="DuplicateSessionBtn_Click"/>
-                                            <MenuFlyoutItem Text="Delete" 
-                                                            Click="DeleteSessionBtn_Click"/>
-                                        </MenuFlyout>
-                                    </StackPanel.ContextFlyout>
-                                    <TextBlock Margin="0,8,0,8">
-                                        <Run Text="{x:Bind Name}"/>
-                                    </TextBlock>
-                                </StackPanel>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </Border>
-        </Grid>
-        <Grid Grid.Column="1" Margin="8,0,0,0">
+        <Grid Margin="8,0,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -139,7 +46,7 @@
                                                      Width="280"
                                                      Height="213.72"
                                                      Margin="0,6,0,0"
-                                                     PlaceholderText="Enter your system prompt here. You may also insert additional system prompt on the fly by switching your role to 'System'."                                                    
+                                                     PlaceholderText="Enter your system prompt here. You may also insert additional system prompt to the conversation on the fly by switching your role to 'System'."                                                    
                                                      AcceptsReturn="True"
                                                      TextWrapping="Wrap"
                                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -150,7 +57,7 @@
                                                       OffContent="Stream Responses"
                                                       OnContent="Stream Responses"
                                                       IsOn="{x:Bind utils:RuntimeConfig.StreamResponse, Mode=TwoWay}"
-                                                      ToolTipService.ToolTip="Output AI responses in real time as it's being generated instead of waiting for the full message. (Unimplemented at the moment.)"/>
+                                                      ToolTipService.ToolTip="Output AI responses in real time as it's being generated instead of waiting for the full message."/>
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Left">
                                                 <TextBlock Text="Seed"
@@ -239,12 +146,14 @@
                                         <TextBox x:Name="URLTextBox"
                                                  PlaceholderText="http://localhost:8080"
                                                  Width="195"
-                                                 Margin="0,6,0,0"/>
+                                                 Margin="0,6,0,0"
+                                                 Text="{x:Bind utils:RuntimeConfig.EndpointURL, Mode=TwoWay}"/>
                                         <TextBlock Text="API Key (optional)"
                                                    Margin="0,12,0,0"/>
                                         <TextBox x:Name="APIKeyTextBox"
                                                  Width="195"
-                                                 Margin="0,6,0,0"/>
+                                                 Margin="0,6,0,0"
+                                                 Text="{x:Bind utils:RuntimeConfig.EndpointAPIKey, Mode=TwoWay}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="1"
                                                 Orientation="Horizontal"
@@ -259,66 +168,269 @@
                                 </Grid>
                             </Flyout>
                         </Button.Flyout>
-
                     </Button>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Left"
+                            HorizontalAlignment="Center"
                             VerticalAlignment="Center">
-                    <TextBlock x:Name="ConnectionStatus"
-                               Text="No OpenAI-compatible endpoint connected"
-                               Margin="0,8,0,0"
-                               HorizontalAlignment="Right"/>
+                    <ComboBox x:Name="SelectedModelComboBox"
+                              Margin="8,4,0,0"
+                              Width="290"
+                              ItemsSource="{x:Bind Models}"
+                              DisplayMemberPath="Name"/>
                     <ProgressRing x:Name="TaskRing"
                                   IsIndeterminate="False"
                                   Width="16"
                                   Height="16"
-                                  Margin="8,11,0,0"/>
+                                  Margin="12,5,0,0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center">
+                    <Button x:Name="ChatSessionsButton"
+                            Margin="0,0,0,0"
+                            Height="35.62"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            ToolTipService.ToolTip="Manage chat sessions">
+                        <StackPanel>
+                            <ic:SymbolIcon Symbol="History"/>
+                        </StackPanel>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedLeft">
+                                <Grid Width="300"
+                                      Height="400">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0">
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Left">
+                                            <TextBlock Text="Chat Sessions"
+                                                       Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Right">
+                                            <Button x:Name="DeleteAllSessionsButton"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    ToolTipService.ToolTip="Delete all chat sessions">
+                                                <StackPanel>
+                                                    <ic:SymbolIcon Symbol="Delete"/>
+                                                </StackPanel>
+                                                <Button.Flyout>
+                                                    <Flyout>
+                                                        <StackPanel Width="240">
+                                                            <TextBlock Text="All past chat sessions will be permanently removed. This action is irreversible."
+                                                                       TextWrapping="WrapWholeWords"
+                                                                       Margin="0,0,0,12"/>
+                                                            <Button Click="DeleteAllSessionsButton_Click" 
+                                                                    Content="Proceed"/>
+                                                        </StackPanel>
+                                                    </Flyout>
+                                                </Button.Flyout>
+                                            </Button>
+                                            <Button x:Name="NewSessionButton"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    ToolTipService.ToolTip="New chat session"
+                                                    Click="NewSessionButton_Click">
+                                                <StackPanel>
+                                                    <ic:SymbolIcon Symbol="Add"
+                                                                   Margin="0,1,0,0"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid Grid.Row="1">
+                                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1,1,1,0"
+                                                CornerRadius="8"
+                                                Height="370">
+                                            <ListView x:Name="ChatSessionsListView"
+                                                      Margin="0,5,0,0"
+                                                      SelectionChanged="ChatSessionsListView_SelectionChanged"
+                                                      ItemsSource="{x:Bind SessionsCollectionViewSource.View, Mode=OneWay}"
+                                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                                <ListView.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <ItemsStackPanel ItemsUpdatingScrollMode="KeepLastItemInView"/>
+                                                    </ItemsPanelTemplate>
+                                                </ListView.ItemsPanel>
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate x:DataType="types:ChatSession">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel Orientation="Vertical">
+                                                                <StackPanel.ContextFlyout>
+                                                                    <MenuFlyout>
+                                                                        <MenuFlyoutItem Text="Duplicate" 
+                                                                                        Click="DuplicateSessionButton_Click"/>
+                                                                        <MenuFlyoutItem Text="Delete" 
+                                                                                        Click="DeleteSessionButton_Click"/>
+                                                                    </MenuFlyout>
+                                                                </StackPanel.ContextFlyout>
+                                                                <TextBlock Margin="0,8,0,8"
+                                                                           Text="{x:Bind Name}"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
+                                        </Border>
+                                    </Grid>
+                                </Grid>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
                 </StackPanel>
             </Grid>
             <Grid Grid.Row="1" 
-                  Margin="0,8,0,0">
+                  Margin="0,6,0,0">
                 <Grid>
                     <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1,1,1,0"
                             CornerRadius="8">
-                        <ListView x:Name="MessagesListView"
-                                  SelectionMode="None"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
-                            <ListView.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <ItemsStackPanel ItemsUpdatingScrollMode="KeepLastItemInView"/>
-                                </ItemsPanelTemplate>
-                            </ListView.ItemsPanel>
-                            <ListView.ItemTemplate>
-                                <DataTemplate x:DataType="types:Message">
-                                    <Grid Margin="0,10,0,0">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
+                        <Grid>
+                            <ListView x:Name="MessagesListView"
+                                      SelectionMode="None"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListView.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <ItemsStackPanel ItemsUpdatingScrollMode="KeepLastItemInView"/>
+                                    </ItemsPanelTemplate>
+                                </ListView.ItemsPanel>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="types:Message">
                                         <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                 BorderThickness="1,1,1,0"
                                                 CornerRadius="8"
-                                                Padding="12,8,12,8">
-                                            <StackPanel Grid.Row="0">
-                                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}">
-                                                    <Run Text="{x:Bind RoleName}"/>
-                                                    <Run Text="{x:Bind FormattedTime}"
-                                                         FontSize="10"/>
-                                                </TextBlock>
-                                                <controls:MarkdownTextBlock Text="{x:Bind Content}"
-                                                                            TextWrapping="Wrap"
-                                                                            IsTextSelectionEnabled="True"
-                                                                            Background="Transparent"
-                                                                            UseSyntaxHighlighting="True"/>
-                                            </StackPanel>
+                                                Padding="12,8,12,8"
+                                                Margin="0,10,0,0">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid Grid.Row="0">
+                                                    <StackPanel Grid.Row="0">
+                                                        <TextBlock>
+                                                        <Run Text="{x:Bind RoleName}"
+                                                             FontWeight="Bold"/>
+                                                        <Run Text="{x:Bind FormattedTime}"
+                                                             FontSize="11"/>
+                                                        </TextBlock>
+                                                        <controls:MarkdownTextBlock Text="{x:Bind Content, Mode=OneWay}"
+                                                                                    TextWrapping="Wrap"
+                                                                                    IsTextSelectionEnabled="True"
+                                                                                    Background="Transparent"
+                                                                                    UseSyntaxHighlighting="True"
+                                                                                    Margin="0,8,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <Grid Grid.Row="1"
+                                                      Margin="0,25,0,0">
+                                                    <StackPanel Grid.Row="1"
+                                                                Orientation="Horizontal"
+                                                                HorizontalAlignment="Left"
+                                                                VerticalAlignment="Bottom">
+                                                        <TextBlock Text="{x:Bind ModelUsed}"
+                                                                   FontSize="10"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Row="1"
+                                                                Orientation="Horizontal"
+                                                                HorizontalAlignment="Right"
+                                                                VerticalAlignment="Top">
+                                                        <Button x:Name="CopyContentButton"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                Click="CopyContentButton_Click"
+                                                                ToolTipService.ToolTip="Copy message contents to clipboard">
+                                                            <StackPanel>
+                                                                <ic:SymbolIcon Symbol="Clipboard"
+                                                                               Margin="0,1,0,0"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button x:Name="EditContentButton"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                Click="EditContentButton_Click"
+                                                                ToolTipService.ToolTip="Edit message content">
+                                                            <StackPanel>
+                                                                <ic:SymbolIcon Symbol="Edit"
+                                                                               Margin="0,1,0,0"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button x:Name="DeleteMessageButton"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                Click="DeleteMessageButton_Click"
+                                                                ToolTipService.ToolTip="Delete the message">
+                                                            <StackPanel>
+                                                                <ic:SymbolIcon Symbol="Delete"
+                                                                               Margin="0,1,0,0"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <StackPanel x:Name="AIResponseActionsStackPanel"
+                                                                    Orientation="Horizontal"
+                                                                    Visibility="{x:Bind IsAIResponse, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                            <AppBarSeparator Margin="8,0,8,0"/>
+                                                            <Button x:Name="RegenerateButton"
+                                                                    Background="Transparent"
+                                                                    BorderThickness="0"
+                                                                    Click="RegenerateButton_Click"
+                                                                    ToolTipService.ToolTip="Regenerate AI response">
+                                                                <StackPanel>
+                                                                    <ic:SymbolIcon Symbol="ArrowClockwise"
+                                                                                   Margin="0,1,0,0"/>
+                                                                </StackPanel>
+                                                            </Button>
+                                                            <StackPanel x:Name="MultipleResponsesActionsStackPanel"
+                                                                        Orientation="Horizontal"
+                                                                        Visibility="{x:Bind MultipleResponsesPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                                <Button x:Name="PreviousIterationButton"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        Click="PreviousIterationButton_Click"
+                                                                        ToolTipService.ToolTip="Switch to previous response iteration">
+                                                                    <StackPanel>
+                                                                        <ic:SymbolIcon Symbol="ArrowHookUpLeft"
+                                                                                       Margin="0,1,0,0"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                                <TextBlock VerticalAlignment="Center"
+                                                                           Margin="7,0,7,0">
+                                                                    <Run Text="{x:Bind VisibleContentIndex}"/>
+                                                                    <Run Text="/"/>
+                                                                    <Run Text="{x:Bind Path=Contents.Count}"/>
+                                                                </TextBlock>
+                                                                <Button x:Name="NextIterationButton"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        Click="NextIterationButton_Click"
+                                                                        ToolTipService.ToolTip="Switch to next response iteration">
+                                                                    <StackPanel>
+                                                                        <ic:SymbolIcon Symbol="ArrowHookUpRight"
+                                                                                       Margin="0,1,0,0"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Grid>
                                         </Border>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Grid>
                     </Border>
                 </Grid>
             </Grid>

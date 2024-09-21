@@ -27,11 +27,13 @@ namespace TumeraAI
     public sealed partial class MainWindow : Window
     {
         private static Grid rootGrid;
+        private static Window thisWindow;
         public MainWindow()
         {
             this.InitializeComponent();
             ExtendsContentIntoTitleBar = true;
             rootGrid = RootGrid;
+            thisWindow = this;
         }
 
         private void RootNavigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
@@ -43,6 +45,11 @@ namespace TumeraAI
             catch(ArgumentNullException ex)
             {
             }
+        }
+
+        public static Window GetWindow()
+        {
+            return thisWindow;
         }
 
         public static Grid GetRootGrid()
