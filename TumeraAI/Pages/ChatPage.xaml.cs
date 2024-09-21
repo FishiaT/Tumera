@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading;
 using TumeraAI.Main.API;
 using TumeraAI.Main.Types;
 using TumeraAI.Main.Utils;
@@ -25,6 +26,7 @@ namespace TumeraAI.Pages
         public static ObservableCollection<ChatSession> Sessions = new ObservableCollection<ChatSession>();
         public CollectionViewSource SessionsCollectionViewSource = new CollectionViewSource { Source = Sessions }; 
         public ObservableCollection<Model> Models = new ObservableCollection<Model>();
+        private CancellationTokenSource cancellationTokenSource;
         public ChatPage()
         {
             this.InitializeComponent();
@@ -157,17 +159,14 @@ namespace TumeraAI.Pages
             {
                 RuntimeConfig.IsInferencing = true;
                 TaskRing.IsIndeterminate = true;
+                StopGenerationButton.Visibility = Visibility.Visible;
+                cancellationTokenSource = new CancellationTokenSource();
+                var ctsToken = cancellationTokenSource.Token;
+                ctsToken.ThrowIfCancellationRequested();
                 Message response = new Message();
                 response.Role = Roles.ASSISTANT;
                 response.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
                 response.Contents = new List<string>();
-                //var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[SelectedModelComboBox.SelectedIndex].Identifier);
-                //ChatCompletionOptions options = new ChatCompletionOptions();
-                //options.Seed = RuntimeConfig.Seed;
-                //options.Temperature = RuntimeConfig.Temperature;
-                //options.FrequencyPenalty = RuntimeConfig.FrequencyPenalty;
-                //options.PresencePenalty = RuntimeConfig.PresencePenalty;
-                //options.MaxOutputTokenCount = RuntimeConfig.MaxTokens;
                 if (!RuntimeConfig.StreamResponse)
                 {
                     int rIndex;
@@ -180,25 +179,32 @@ namespace TumeraAI.Pages
                         rIndex = msgIndex;
                     }
                     if (!regenerate) Sessions[currentIndex].Messages.Add(response);
-                    //ChatCompletion aiResponse = await chatClient.CompleteChatAsync(messages, options);
-                    var aiResponse = await RuntimeConfig.OAIClient.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
+                    var curMsg = Sessions[currentIndex].Messages[rIndex];
+                    try
                     {
-                        Messages = messages,
-                        Model = Models[SelectedModelComboBox.SelectedIndex].Identifier,
-                        Seed = RuntimeConfig.Seed,
-                        Temperature = RuntimeConfig.Temperature,
-                        FrequencyPenalty = RuntimeConfig.FrequencyPenalty,
-                        PresencePenalty = RuntimeConfig.PresencePenalty,
-                        MaxTokens = RuntimeConfig.MaxTokens
-                    });
-                    if (aiResponse.Successful) {
-                        var curMsg = Sessions[currentIndex].Messages[rIndex];
-                        var newMsg = curMsg;
-                        newMsg.Content = aiResponse.Choices.First().Message.Content;
-                        newMsg.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
-                        newMsg.Contents.Add(newMsg.Content);
-                        if (regenerate) newMsg.ContentIndex = newMsg.RealContentCount;
-                        Sessions[currentIndex].Messages[rIndex] = newMsg;
+                        var aiResponse = await RuntimeConfig.OAIClient.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
+                        {
+                            Messages = messages,
+                            Model = Models[SelectedModelComboBox.SelectedIndex].Identifier,
+                            Seed = RuntimeConfig.Seed,
+                            Temperature = RuntimeConfig.Temperature,
+                            FrequencyPenalty = RuntimeConfig.FrequencyPenalty,
+                            PresencePenalty = RuntimeConfig.PresencePenalty,
+                            MaxTokens = RuntimeConfig.MaxTokens
+                        }, cancellationToken: ctsToken);
+                        if (aiResponse.Successful)
+                        {
+                            var newMsg = curMsg;
+                            newMsg.Content = aiResponse.Choices.First().Message.Content;
+                            newMsg.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
+                            newMsg.Contents.Add(newMsg.Content);
+                            if (regenerate) newMsg.ContentIndex = newMsg.RealContentCount;
+                            Sessions[currentIndex].Messages[rIndex] = newMsg;
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        if (!regenerate) Sessions[currentIndex].Messages.Remove(curMsg);
                     }
                 }
                 else
@@ -214,7 +220,8 @@ namespace TumeraAI.Pages
                         rIndex = msgIndex;
                     }
                     if (!regenerate) Sessions[currentIndex].Messages.Add(response);
-                    //AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
+                    var curMsg = Sessions[currentIndex].Messages[rIndex];
+                    string origMsgContent = curMsg.Content;
                     var streamResponse = RuntimeConfig.OAIClient.ChatCompletion.CreateCompletionAsStream(new ChatCompletionCreateRequest
                     {
                         Messages = messages,
@@ -224,25 +231,39 @@ namespace TumeraAI.Pages
                         FrequencyPenalty = RuntimeConfig.FrequencyPenalty,
                         PresencePenalty = RuntimeConfig.PresencePenalty,
                         MaxTokens = RuntimeConfig.MaxTokens
-                    });
-                    var curMsg = Sessions[currentIndex].Messages[rIndex];
+                    }, cancellationToken: ctsToken);
                     curMsg.Content = "";
-                    await foreach (var chunk in streamResponse)
+                    try
                     {
-                        if (chunk.Successful)
+                        await foreach (var chunk in streamResponse)
                         {
-                            curMsg.Content += chunk.Choices.First().Message.Content;
+                            if (chunk.Successful)
+                            {
+                                curMsg.Content += chunk.Choices.First().Message.Content;
+                            }
+                        }
+                        Message newResS = new Message();
+                        newResS = Sessions[currentIndex].Messages[rIndex];
+                        newResS.Contents.Add(Sessions[currentIndex].Messages[rIndex].Content);
+                        newResS.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
+                        if (regenerate) newResS.ContentIndex = newResS.RealContentCount;
+                        Sessions[currentIndex].Messages[rIndex] = newResS;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        if (!regenerate)
+                        {
+                            Sessions[currentIndex].Messages.Remove(curMsg);
+                        }
+                        else
+                        {
+                            Sessions[currentIndex].Messages[rIndex].Content = origMsgContent;
                         }
                     }
-                    Message newResS = new Message();
-                    newResS = Sessions[currentIndex].Messages[rIndex];
-                    newResS.Contents.Add(Sessions[currentIndex].Messages[rIndex].Content);
-                    newResS.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
-                    if (regenerate) newResS.ContentIndex = newResS.RealContentCount;
-                    Sessions[currentIndex].Messages[rIndex] = newResS;
                 }
                 RuntimeConfig.IsInferencing = false;
                 TaskRing.IsIndeterminate = false;
+                StopGenerationButton.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -499,6 +520,11 @@ namespace TumeraAI.Pages
                     Sessions[ChatSessionsListView.SelectedIndex].Messages[index] = newMsg;
                 }
             }
+        }
+
+        private void StopGenerationButton_Click(object sender, RoutedEventArgs e)
+        {
+            cancellationTokenSource?.Cancel();
         }
     }
 }
