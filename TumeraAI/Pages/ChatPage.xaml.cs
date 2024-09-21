@@ -363,7 +363,7 @@ namespace TumeraAI.Pages
                 return;
             }
             Sessions.Clear();
-            MessagesListView.Items.Clear();
+            MessagesListView.ItemsSource = null;
             DeleteAllSessionsButton.Flyout.Hide();
         }
 
