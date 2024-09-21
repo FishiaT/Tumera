@@ -18,7 +18,6 @@ using TumeraAI.Main.Utils;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 
-#pragma warning disable OPENAI001
 namespace TumeraAI.Pages
 {
     public sealed partial class ChatPage : Page
