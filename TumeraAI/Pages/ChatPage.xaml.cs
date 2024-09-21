@@ -240,10 +240,10 @@ namespace TumeraAI.Pages
                             if (chunk.Successful)
                             {
                                 curMsg.Content += chunk.Choices.First().Message.Content;
+                                origMsgContent = curMsg.Content;
                             }
                         }
-                        Message newResS = new Message();
-                        newResS = Sessions[currentIndex].Messages[rIndex];
+                        Message newResS = Sessions[currentIndex].Messages[rIndex];
                         newResS.Contents.Add(Sessions[currentIndex].Messages[rIndex].Content);
                         newResS.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
                         if (regenerate) newResS.ContentIndex = newResS.RealContentCount;
@@ -251,14 +251,11 @@ namespace TumeraAI.Pages
                     }
                     catch (OperationCanceledException)
                     {
-                        if (!regenerate)
-                        {
-                            Sessions[currentIndex].Messages.Remove(curMsg);
-                        }
-                        else
-                        {
-                            Sessions[currentIndex].Messages[rIndex].Content = origMsgContent;
-                        }
+                        Message newR = curMsg;
+                        newR.Contents.Add(origMsgContent);
+                        newR.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
+                        if (regenerate) newR.ContentIndex = newR.RealContentCount;
+                        Sessions[currentIndex].Messages[rIndex] = newR;
                     }
                 }
                 RuntimeConfig.IsInferencing = false;
