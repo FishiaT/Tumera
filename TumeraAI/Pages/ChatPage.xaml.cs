@@ -196,6 +196,7 @@ namespace TumeraAI.Pages
                     foreach (var i in aiResponse.Content)
                     {
                         newMsg.Content = i.Text;
+                        newMsg.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
                     }
                     newMsg.Contents.Add(newMsg.Content);
                     if (regenerate) newMsg.ContentIndex = newMsg.RealContentCount;
@@ -227,6 +228,7 @@ namespace TumeraAI.Pages
                     Message newResS = new Message();
                     newResS = Sessions[currentIndex].Messages[rIndex];
                     newResS.Contents.Add(Sessions[currentIndex].Messages[rIndex].Content);
+                    newResS.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
                     if (regenerate) newResS.ContentIndex = newResS.RealContentCount;
                     Sessions[currentIndex].Messages[rIndex] = newResS;
                 }
@@ -361,6 +363,7 @@ namespace TumeraAI.Pages
                 return;
             }
             Sessions.Clear();
+            MessagesListView.Items.Clear();
             DeleteAllSessionsButton.Flyout.Hide();
         }
 
@@ -445,8 +448,8 @@ namespace TumeraAI.Pages
             var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.IndexOf(message);
             TextBox msgTextBox = new TextBox
             {
-                Height = 142.48,
-                MaxHeight = 142.48,
+                MaxHeight = 177.74,
+                Width = 450,
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap
             };
@@ -457,7 +460,6 @@ namespace TumeraAI.Pages
                 XamlRoot = MainWindow.GetRootGrid().XamlRoot,
                 Title = "Edit message",
                 Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
-                Width = 300,
                 Content = new Grid
                 {
                     ColumnDefinitions =

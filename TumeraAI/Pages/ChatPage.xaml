@@ -46,7 +46,7 @@
                                                      Width="280"
                                                      Height="213.72"
                                                      Margin="0,6,0,0"
-                                                     PlaceholderText="Enter your system prompt here. You may also insert additional system prompt on the fly by switching your role to 'System'."                                                    
+                                                     PlaceholderText="Enter your system prompt here. You may also insert additional system prompt to the conversation on the fly by switching your role to 'System'."                                                    
                                                      AcceptsReturn="True"
                                                      TextWrapping="Wrap"
                                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -389,15 +389,6 @@
                                                                     ToolTipService.ToolTip="Regenerate AI response">
                                                                 <StackPanel>
                                                                     <ic:SymbolIcon Symbol="ArrowClockwise"
-                                                                                   Margin="0,1,0,0"/>
-                                                                </StackPanel>
-                                                            </Button>
-                                                            <Button x:Name="ContinueGenerateButton"
-                                                                    Background="Transparent"
-                                                                    BorderThickness="0"
-                                                                    ToolTipService.ToolTip="Continue generating the response">
-                                                                <StackPanel>
-                                                                    <ic:SymbolIcon Symbol="ArrowRight"
                                                                                    Margin="0,1,0,0"/>
                                                                 </StackPanel>
                                                             </Button>
