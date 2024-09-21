@@ -30,8 +30,7 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240829007" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="OpenAI" Version="2.0.0-beta.11" />
-    <PackageReference Include="RestSharp" Version="112.0.0" />
+    <PackageReference Include="OpenAI" Version="2.0.0-beta.12" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 

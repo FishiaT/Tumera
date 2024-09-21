@@ -54,10 +54,15 @@
                                         </StackPanel>
                                         <StackPanel Grid.Row="1">
                                             <ToggleSwitch x:Name="StreamResponsesToggleSwitch"
-                                                      OffContent="Stream Responses"
-                                                      OnContent="Stream Responses"
-                                                      IsOn="{x:Bind utils:RuntimeConfig.StreamResponse, Mode=TwoWay}"
-                                                      ToolTipService.ToolTip="Output AI responses in real time as it's being generated instead of waiting for the full message."/>
+                                                          OffContent="Stream Responses"
+                                                          OnContent="Stream Responses"
+                                                          IsOn="{x:Bind utils:RuntimeConfig.StreamResponse, Mode=TwoWay}"
+                                                          ToolTipService.ToolTip="Output AI responses in real time as it's being generated instead of waiting for the full message."/>
+                                            <ToggleSwitch x:Name="EnableVisionToggleSwitch"
+                                                          OffContent="Enable Vision"
+                                                          OnContent="Enable Vision"
+                                                          IsOn="{x:Bind utils:RuntimeConfig.EnableVision, Mode=TwoWay}"
+                                                          ToolTipService.ToolTip="Enable the ability to attach image(s) to the prompt to send to the AI for processing. The AI can only processing attached image(s) if the selected model is a vision model."/>
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Left">
                                                 <TextBlock Text="Seed"

@@ -16,6 +16,7 @@ namespace TumeraAI.Main.Utils
         public static bool IsInferencing = false;
         public static string SystemPrompt = "";
         public static bool StreamResponse = true;
+        public static bool EnableVision = false;
         public static int Seed = -1;
         public static float Temperature = 1;
         public static float FrequencyPenalty = 0;

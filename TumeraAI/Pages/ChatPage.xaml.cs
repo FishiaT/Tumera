@@ -177,7 +177,7 @@ namespace TumeraAI.Pages
                 options.Temperature = RuntimeConfig.Temperature;
                 options.FrequencyPenalty = RuntimeConfig.FrequencyPenalty;
                 options.PresencePenalty = RuntimeConfig.PresencePenalty;
-                options.MaxTokens = RuntimeConfig.MaxTokens;
+                options.MaxOutputTokenCount = RuntimeConfig.MaxTokens;
                 if (!RuntimeConfig.StreamResponse)
                 {
                     int rIndex;
