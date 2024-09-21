@@ -16,7 +16,9 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
+using System.Threading;
 using TumeraAI.Main.API;
 using TumeraAI.Main.Types;
 using TumeraAI.Main.Utils;
@@ -198,8 +200,6 @@ namespace TumeraAI.Pages
                     newMsg.Contents.Add(newMsg.Content);
                     if (regenerate) newMsg.ContentIndex = newMsg.RealContentCount;
                     Sessions[currentIndex].Messages[rIndex] = newMsg;
-                    RuntimeConfig.IsInferencing = false;
-                    TaskRing.IsIndeterminate = false;
                 }
                 else
                 {
@@ -221,12 +221,7 @@ namespace TumeraAI.Pages
                     {
                         foreach (ChatMessageContentPart chunkPart in chunk.ContentUpdate)
                         {
-                            Message newRes = new Message();
-                            newRes = curMsg;
-                            newRes.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
-                            newRes.Content +=  chunkPart.Text;
-                            Sessions[currentIndex].Messages[rIndex] = newRes;
-                            curMsg = newRes;
+                            curMsg.Content += chunkPart.Text;
                         }
                     }
                     Message newResS = new Message();
@@ -234,9 +229,9 @@ namespace TumeraAI.Pages
                     newResS.Contents.Add(Sessions[currentIndex].Messages[rIndex].Content);
                     if (regenerate) newResS.ContentIndex = newResS.RealContentCount;
                     Sessions[currentIndex].Messages[rIndex] = newResS;
-                    RuntimeConfig.IsInferencing = false;
-                    TaskRing.IsIndeterminate = false;
                 }
+                RuntimeConfig.IsInferencing = false;
+                TaskRing.IsIndeterminate = false;
             }
         }
 

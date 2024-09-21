@@ -8,7 +8,7 @@ using Windows.Storage.Search;
 
 namespace TumeraAI.Main.Types
 {
-    public class Message
+    public class Message: INotifyPropertyChanged
     {
         public Roles Role { get; set; }
         public string RoleName => Role.ToString();
@@ -16,7 +16,19 @@ namespace TumeraAI.Main.Types
         public string FormattedTime => Time.ToString("hh:mm tt");
         public List<string> Contents { get; set; }
         public int ContentIndex = 0;
-        public string Content = "";
+        private string _content = "";
+        public string Content
+        {
+            get => _content;
+            set
+            {
+                if (_content != value)
+                {
+                    _content = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         public int VisibleContentIndex => ContentIndex + 1;
         public int RealContentCount
         {
@@ -41,5 +53,11 @@ namespace TumeraAI.Main.Types
 
         public bool IsAIResponse => Role == Roles.ASSISTANT;
         public string ModelUsed = "";
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }
