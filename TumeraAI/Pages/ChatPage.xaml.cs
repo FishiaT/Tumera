@@ -1,30 +1,20 @@
-using CommunityToolkit.WinUI.UI;
-using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.VisualBasic;
 using OpenAI;
-using OpenAI.Chat;
+using OpenAI.Managers;
+using OpenAI.ObjectModels.RequestModels;
 using System;
-using System.ClientModel;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Data;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
-using System.Threading;
 using TumeraAI.Main.API;
 using TumeraAI.Main.Types;
 using TumeraAI.Main.Utils;
 using Windows.ApplicationModel.DataTransfer;
-using Windows.Media.Control;
-using Windows.Media.Protection.PlayReady;
 using Windows.System;
 
 #pragma warning disable OPENAI001
@@ -143,7 +133,7 @@ namespace TumeraAI.Pages
             List<ChatMessage> messages = new List<ChatMessage>();
             if (!string.IsNullOrEmpty(RuntimeConfig.SystemPrompt))
             {
-                messages.Add(ChatMessage.CreateSystemMessage(RuntimeConfig.SystemPrompt));
+                messages.Add(ChatMessage.FromSystem(RuntimeConfig.SystemPrompt));
             }
             int curIndex = 0;
             foreach (Message msg in Sessions[currentIndex].Messages.ToList())
@@ -152,13 +142,13 @@ namespace TumeraAI.Pages
                 switch (msg.Role)
                 {
                     case Roles.USER:
-                        messages.Add(ChatMessage.CreateUserMessage(msg.Content));
+                        messages.Add(ChatMessage.FromUser(msg.Content));
                         break;
                     case Roles.ASSISTANT:
-                        messages.Add(ChatMessage.CreateAssistantMessage(msg.Content));
+                        messages.Add(ChatMessage.FromAssistant(msg.Content));
                         break;
                     case Roles.SYSTEM:
-                        messages.Add(ChatMessage.CreateSystemMessage(msg.Content));
+                        messages.Add(ChatMessage.FromSystem(msg.Content));
                         break;
                 }
                 curIndex++;
@@ -171,13 +161,13 @@ namespace TumeraAI.Pages
                 response.Role = Roles.ASSISTANT;
                 response.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
                 response.Contents = new List<string>();
-                var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[SelectedModelComboBox.SelectedIndex].Identifier);
-                ChatCompletionOptions options = new ChatCompletionOptions();
-                options.Seed = RuntimeConfig.Seed;
-                options.Temperature = RuntimeConfig.Temperature;
-                options.FrequencyPenalty = RuntimeConfig.FrequencyPenalty;
-                options.PresencePenalty = RuntimeConfig.PresencePenalty;
-                options.MaxOutputTokenCount = RuntimeConfig.MaxTokens;
+                //var chatClient = RuntimeConfig.OAIClient.GetChatClient(Models[SelectedModelComboBox.SelectedIndex].Identifier);
+                //ChatCompletionOptions options = new ChatCompletionOptions();
+                //options.Seed = RuntimeConfig.Seed;
+                //options.Temperature = RuntimeConfig.Temperature;
+                //options.FrequencyPenalty = RuntimeConfig.FrequencyPenalty;
+                //options.PresencePenalty = RuntimeConfig.PresencePenalty;
+                //options.MaxOutputTokenCount = RuntimeConfig.MaxTokens;
                 if (!RuntimeConfig.StreamResponse)
                 {
                     int rIndex;
@@ -190,17 +180,26 @@ namespace TumeraAI.Pages
                         rIndex = msgIndex;
                     }
                     if (!regenerate) Sessions[currentIndex].Messages.Add(response);
-                    ChatCompletion aiResponse = await chatClient.CompleteChatAsync(messages, options);
-                    var curMsg = Sessions[currentIndex].Messages[rIndex];
-                    var newMsg = curMsg;
-                    foreach (var i in aiResponse.Content)
+                    //ChatCompletion aiResponse = await chatClient.CompleteChatAsync(messages, options);
+                    var aiResponse = await RuntimeConfig.OAIClient.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
                     {
-                        newMsg.Content = i.Text;
+                        Messages = messages,
+                        Model = Models[SelectedModelComboBox.SelectedIndex].Identifier,
+                        Seed = RuntimeConfig.Seed,
+                        Temperature = RuntimeConfig.Temperature,
+                        FrequencyPenalty = RuntimeConfig.FrequencyPenalty,
+                        PresencePenalty = RuntimeConfig.PresencePenalty,
+                        MaxTokens = RuntimeConfig.MaxTokens
+                    });
+                    if (aiResponse.Successful) {
+                        var curMsg = Sessions[currentIndex].Messages[rIndex];
+                        var newMsg = curMsg;
+                        newMsg.Content = aiResponse.Choices.First().Message.Content;
                         newMsg.ModelUsed = Models[SelectedModelComboBox.SelectedIndex].Name;
+                        newMsg.Contents.Add(newMsg.Content);
+                        if (regenerate) newMsg.ContentIndex = newMsg.RealContentCount;
+                        Sessions[currentIndex].Messages[rIndex] = newMsg;
                     }
-                    newMsg.Contents.Add(newMsg.Content);
-                    if (regenerate) newMsg.ContentIndex = newMsg.RealContentCount;
-                    Sessions[currentIndex].Messages[rIndex] = newMsg;
                 }
                 else
                 {
@@ -215,14 +214,24 @@ namespace TumeraAI.Pages
                         rIndex = msgIndex;
                     }
                     if (!regenerate) Sessions[currentIndex].Messages.Add(response);
-                    AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
+                    //AsyncCollectionResult<StreamingChatCompletionUpdate> streamResponse = chatClient.CompleteChatStreamingAsync(messages, options);
+                    var streamResponse = RuntimeConfig.OAIClient.ChatCompletion.CreateCompletionAsStream(new ChatCompletionCreateRequest
+                    {
+                        Messages = messages,
+                        Model = Models[SelectedModelComboBox.SelectedIndex].Identifier,
+                        Seed = RuntimeConfig.Seed,
+                        Temperature = RuntimeConfig.Temperature,
+                        FrequencyPenalty = RuntimeConfig.FrequencyPenalty,
+                        PresencePenalty = RuntimeConfig.PresencePenalty,
+                        MaxTokens = RuntimeConfig.MaxTokens
+                    });
                     var curMsg = Sessions[currentIndex].Messages[rIndex];
                     curMsg.Content = "";
-                    await foreach (StreamingChatCompletionUpdate chunk in streamResponse)
+                    await foreach (var chunk in streamResponse)
                     {
-                        foreach (ChatMessageContentPart chunkPart in chunk.ContentUpdate)
+                        if (chunk.Successful)
                         {
-                            curMsg.Content += chunkPart.Text;
+                            curMsg.Content += chunk.Choices.First().Message.Content;
                         }
                     }
                     Message newResS = new Message();
@@ -331,9 +340,14 @@ namespace TumeraAI.Pages
                 {
                     apiKey = "placeholder_just_for_this";
                 }
-                RuntimeConfig.OAIClient = new OpenAIClient(apiKey, new()
+                //RuntimeConfig.OAIClient = new OpenAIClient(apiKey, new()
+                //{
+                //    Endpoint = new Uri(RuntimeConfig.EndpointURL)
+                //});
+                RuntimeConfig.OAIClient = new OpenAIService(new OpenAiOptions()
                 {
-                    Endpoint = new Uri(RuntimeConfig.EndpointURL)
+                    ApiKey = apiKey,
+                    BaseDomain = RuntimeConfig.EndpointURL,
                 });
                 ModelTextBlock.Text = "Connected";
                 APIConnectButton.Content = "Disconnect";

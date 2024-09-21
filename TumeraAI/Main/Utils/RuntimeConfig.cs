@@ -1,8 +1,4 @@
-﻿using OpenAI;
-using System;
-using System.Collections.Generic;
-using TumeraAI.Main.Types;
-using Windows.ApplicationModel.Chat;
+﻿using OpenAI.Managers;
 
 namespace TumeraAI.Main.Utils
 {
@@ -11,7 +7,7 @@ namespace TumeraAI.Main.Utils
         public static string EndpointURL = "";
         public static string EndpointAPIKey = "";
         public static bool IsConnected = false;
-        public static OpenAIClient OAIClient;
+        public static OpenAIService OAIClient;
         public static Roles CurrentRole = Roles.USER;
         public static bool IsInferencing = false;
         public static string SystemPrompt = "";
