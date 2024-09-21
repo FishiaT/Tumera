@@ -339,8 +339,6 @@
                                                         <TextBlock>
                                                         <Run Text="{x:Bind RoleName}"
                                                              FontWeight="Bold"/>
-                                                        <Run Text="{x:Bind FormattedTime}"
-                                                             FontSize="11"/>
                                                         </TextBlock>
                                                         <controls:MarkdownTextBlock Text="{x:Bind Content, Mode=OneWay}"
                                                                                     TextWrapping="Wrap"
@@ -356,7 +354,7 @@
                                                                 Orientation="Horizontal"
                                                                 HorizontalAlignment="Left"
                                                                 VerticalAlignment="Bottom">
-                                                        <TextBlock Text="{x:Bind ModelUsed}"
+                                                        <TextBlock Text="{x:Bind Info}"
                                                                    FontSize="10"/>
                                                     </StackPanel>
                                                     <StackPanel Grid.Row="1"

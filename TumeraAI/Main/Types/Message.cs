@@ -13,7 +13,7 @@ namespace TumeraAI.Main.Types
         public Roles Role { get; set; }
         public string RoleName => Role.ToString();
         public DateTime Time => DateTime.Now;
-        public string FormattedTime => Time.ToString("hh:mm tt");
+        public string FormattedTime => Time.ToString("dddd, MMM dd yyyy, hh:mm tt");
         public List<string> Contents { get; set; }
         public int ContentIndex = 0;
         private string _content = "";
@@ -53,6 +53,17 @@ namespace TumeraAI.Main.Types
 
         public bool IsAIResponse => Role == Roles.ASSISTANT;
         public string ModelUsed = "";
+        public string Info
+        {
+            get
+            {
+                if (IsAIResponse)
+                {
+                    return $"{ModelUsed} • {FormattedTime}";
+                }
+                return $"{FormattedTime}";
+            }
+        } 
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
