@@ -16,7 +16,18 @@ namespace TumeraAI.Main.Types
         public DateTime Time => DateTime.Now;
         public string FormattedTime => Time.ToString("MMM dd yyyy, hh:mm tt");
         public List<string> Contents { get; set; }
-        public List<FileAttachment> Attachments { get; set; }
+        public List<FileAttachment> Attachments = new List<FileAttachment>();
+        public bool AttachmentsVisible
+        {
+            get
+            {
+                if (Attachments?.Count > 0 && !IsAIResponse)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
         public int ContentIndex = 0;
         private string _content = "";
         public string Content

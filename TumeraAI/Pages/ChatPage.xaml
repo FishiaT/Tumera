@@ -344,7 +344,7 @@
                                                         <FlipView MaxWidth="170" 
                                                                   MaxHeight="170" 
                                                                   ItemsSource="{x:Bind Attachments}"
-                                                                  Visibility="{x:Bind IsAIResponse, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                                                  Visibility="{x:Bind AttachmentsVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                                                                   HorizontalAlignment="Left">
                                                             <FlipView.ItemTemplate>
                                                                 <DataTemplate x:DataType="types:FileAttachment">

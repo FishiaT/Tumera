@@ -13,7 +13,6 @@
             </ResourceDictionary.MergedDictionaries>
             <!-- Other app resources here -->
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-            <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
