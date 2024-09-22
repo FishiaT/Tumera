@@ -1,4 +1,5 @@
 ﻿using OpenAI.Managers;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using static OpenAI.ObjectModels.StaticValues.AssistantsStatics.MessageStatics;
@@ -15,7 +16,8 @@ namespace TumeraAI.Main.Utils
         public static bool IsInferencing = false;
         public static string SystemPrompt = "";
         public static bool StreamResponse = true;
-        public static bool EnableVision = false;
+        public static bool EnableAttachments = false;
+        public static List<string> SupportedAttachments = new List<string>() { ".png", ".jpg" };
         public static int Seed = -1;
         public static float Temperature = 1;
         public static float FrequencyPenalty = 0;

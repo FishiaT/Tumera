@@ -71,9 +71,9 @@
                                             <ToggleSwitch x:Name="EnableAttachmentsToggleSwitch"
                                                           OffContent="Enable Attachments"
                                                           OnContent="Enable Attachments"
-                                                          IsOn="{x:Bind utils:RuntimeConfig.EnableVision, Mode=TwoWay}"
+                                                          IsOn="{x:Bind utils:RuntimeConfig.EnableAttachments, Mode=TwoWay}"
                                                           Toggled="EnableAttachmentsToggleSwitch_Toggled"
-                                                          ToolTipService.ToolTip="Enable the ability to attach files (images, docs, etc...) to the prompt to send to the AI for processing. The AI can only processing attached attached files if the selected model supports it."/>
+                                                          ToolTipService.ToolTip="Enable the ability to attach files (images, docs, etc...) to the prompt to send to the AI for processing. The AI can only processing attached attached files if the selected model supports it. HIGHLY EXPERIMENTAL!"/>
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Left">
                                                 <TextBlock Text="Seed"
@@ -268,7 +268,7 @@
                                             <ListView x:Name="ChatSessionsListView"
                                                       Margin="0,5,0,0"
                                                       SelectionChanged="ChatSessionsListView_SelectionChanged"
-                                                      ItemsSource="{x:Bind SessionsCollectionViewSource.View, Mode=OneWay}"
+                                                      ItemsSource="{x:Bind Sessions, Mode=OneWay}"
                                                       ScrollViewer.VerticalScrollBarVisibility="Auto">
                                                 <ListView.ItemsPanel>
                                                     <ItemsPanelTemplate>
@@ -341,6 +341,17 @@
                                                         <Run Text="{x:Bind RoleName}"
                                                              FontWeight="Bold"/>
                                                         </TextBlock>
+                                                        <FlipView MaxWidth="170" 
+                                                                  MaxHeight="170" 
+                                                                  ItemsSource="{x:Bind Attachments}"
+                                                                  Visibility="{x:Bind IsAIResponse, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                                                  HorizontalAlignment="Left">
+                                                            <FlipView.ItemTemplate>
+                                                                <DataTemplate x:DataType="types:FileAttachment">
+                                                                    <Image Source="{x:Bind Path, Mode=OneTime}" />
+                                                                </DataTemplate>
+                                                            </FlipView.ItemTemplate>
+                                                        </FlipView>
                                                         <controls:MarkdownTextBlock Text="{x:Bind Content, Mode=OneWay}"
                                                                                     TextWrapping="Wrap"
                                                                                     IsTextSelectionEnabled="True"
@@ -473,6 +484,92 @@
                         <StackPanel>
                             <ic:SymbolIcon Symbol="Attach"/>
                         </StackPanel>
+                        <Button.Flyout>
+                            <Flyout>
+                                <Grid Width="300"
+                                      Height="400">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0">
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Left">
+                                            <TextBlock Text="Attachments"
+                                                       Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Right">
+                                            <Button x:Name="DeleteAllAttachmentsButton"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Click="DeleteAllAttachmentsButton_Click"
+                                                    ToolTipService.ToolTip="Delete all added attachments">
+                                                <StackPanel>
+                                                    <ic:SymbolIcon Symbol="Delete"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button x:Name="AddFileAttachmentsButton"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    ToolTipService.ToolTip="Attach files"
+                                                    Click="AddFileAttachmentsButton_Click">
+                                                <StackPanel>
+                                                    <ic:SymbolIcon Symbol="Add"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid Grid.Row="1">
+                                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1,1,1,0"
+                                                CornerRadius="8"
+                                                Height="370">
+                                            <ListView x:Name="AttachmentsListView"
+                                                      Margin="0,5,0,0"
+                                                      SelectionMode="None"
+                                                      ItemsSource="{x:Bind Attachments, Mode=OneWay}"
+                                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                                <ListView.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <ItemsStackPanel ItemsUpdatingScrollMode="KeepLastItemInView"/>
+                                                    </ItemsPanelTemplate>
+                                                </ListView.ItemsPanel>
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate x:DataType="types:FileAttachment">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel Orientation="Horizontal"
+                                                                        Grid.Column="0">
+                                                                <TextBlock Margin="0,8,0,8"
+                                                                           Text="{x:Bind Name}"/>
+                                                            </StackPanel>
+                                                            <StackPanel Orientation="Horizontal"
+                                                                        Grid.Column="1">
+                                                                <Button x:Name="RemoveAttachmentButton"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        ToolTipService.ToolTip="Remove this attachment"
+                                                                        Click="RemoveAttachmentButton_Click">
+                                                                    <StackPanel>
+                                                                        <ic:SymbolIcon Symbol="Delete"
+                                                                                       Margin="0,1,0,0"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
+                                        </Border>
+                                    </Grid>
+                                </Grid>
+                            </Flyout>
+                        </Button.Flyout>
                     </Button>
                     <TextBox x:Name="PromptTextBox"
                              Grid.Column="2"

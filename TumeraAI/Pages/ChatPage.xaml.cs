@@ -16,15 +16,18 @@ using TumeraAI.Main.API;
 using TumeraAI.Main.Types;
 using TumeraAI.Main.Utils;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
+using Windows.Storage.Pickers;
 using Windows.System;
+using WinRT.Interop;
 
 namespace TumeraAI.Pages
 {
     public sealed partial class ChatPage : Page
     {
-        public static ObservableCollection<ChatSession> Sessions = new ObservableCollection<ChatSession>();
-        public CollectionViewSource SessionsCollectionViewSource = new CollectionViewSource { Source = Sessions }; 
+        public ObservableCollection<ChatSession> Sessions = new ObservableCollection<ChatSession>();
         public ObservableCollection<Model> Models = new ObservableCollection<Model>();
+        public ObservableCollection<FileAttachment> Attachments = new ObservableCollection<FileAttachment>();
         private CancellationTokenSource cancellationTokenSource;
         public ChatPage()
         {
@@ -130,6 +133,7 @@ namespace TumeraAI.Pages
                     break;
             }
             if (!regenerate) Sessions[currentIndex].Messages.Add(message);
+            message.Attachments = Attachments.ToList();
             PromptTextBox.Text = "";
             List<ChatMessage> messages = new List<ChatMessage>();
             if (!string.IsNullOrEmpty(RuntimeConfig.SystemPrompt))
@@ -143,7 +147,16 @@ namespace TumeraAI.Pages
                 switch (msg.Role)
                 {
                     case Roles.USER:
-                        messages.Add(ChatMessage.FromUser(msg.Content));
+                        var msgContent = new List<MessageContent>();
+                        msgContent.Add(MessageContent.TextContent(msg.Content));
+                        if (message.Attachments.Count > 0 && RuntimeConfig.EnableAttachments)
+                        {
+                            foreach (var a in message.Attachments)
+                            {
+                                msgContent.Add(MessageContent.ImageUrlContent($"data:image/{a.Extension};base64,{Convert.ToBase64String(File.ReadAllBytes(a.Path))}"));
+                            }
+                        }
+                        messages.Add(ChatMessage.FromUser(msgContent));
                         break;
                     case Roles.ASSISTANT:
                         messages.Add(ChatMessage.FromAssistant(msg.Content));
@@ -260,6 +273,7 @@ namespace TumeraAI.Pages
                 RuntimeConfig.IsInferencing = false;
                 TaskRing.IsIndeterminate = false;
                 StopGenerationButton.Visibility = Visibility.Collapsed;
+                Attachments.Clear();
             }
         }
 
@@ -267,7 +281,7 @@ namespace TumeraAI.Pages
         {
             Inference();
         }
-        
+
         private void AddNewSession()
         {
             var currentCount = Sessions.Count;
@@ -369,7 +383,7 @@ namespace TumeraAI.Pages
                 ModelTextBlock.Text = "Connected";
                 APIConnectButton.Content = "Disconnect";
                 RuntimeConfig.IsConnected = true;
-                
+
             }
             else
             {
@@ -441,7 +455,7 @@ namespace TumeraAI.Pages
             var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.IndexOf(message);
             var newMsg = new Message();
             newMsg = message;
-            if (newMsg.ContentIndex -1 > -1)
+            if (newMsg.ContentIndex - 1 > -1)
             {
                 newMsg.ContentIndex = newMsg.ContentIndex - 1;
                 newMsg.Content = newMsg.Contents[newMsg.ContentIndex];
@@ -470,10 +484,6 @@ namespace TumeraAI.Pages
 
         private async void EditContentButton_Click(object sender, RoutedEventArgs e)
         {
-            if (RuntimeConfig.IsInferencing)
-            {
-                return;
-            }
             var item = (sender as FrameworkElement).DataContext;
             var message = item as Message;
             var index = Sessions[ChatSessionsListView.SelectedIndex].Messages.IndexOf(message);
@@ -504,7 +514,7 @@ namespace TumeraAI.Pages
                 },
                 PrimaryButtonText = "Confirm",
                 CloseButtonText = "Cancel"
-            }; 
+            };
 
             ContentDialogResult result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary)
@@ -535,8 +545,47 @@ namespace TumeraAI.Pages
                 else
                 {
                     AttachFilesButton.Visibility = Visibility.Collapsed;
+                    Attachments.Clear();
                 }
             }
+        }
+
+        private void DeleteAllAttachmentsButton_Click(object sender, RoutedEventArgs e)
+        {
+            Attachments.Clear();
+        }
+
+        private async void AddFileAttachmentsButton_Click(object sender, RoutedEventArgs e)
+        {
+            //where's my trusty openfiledialog
+            //why it has to be this complicated
+            FileOpenPicker fileOpenPicker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(fileOpenPicker, WindowNative.GetWindowHandle(MainWindow.GetWindow()));
+            fileOpenPicker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
+            fileOpenPicker.ViewMode = PickerViewMode.List;
+            foreach (string fileType in RuntimeConfig.SupportedAttachments)
+            {
+                fileOpenPicker.FileTypeFilter.Add(fileType);
+            }
+            var files = await fileOpenPicker.PickMultipleFilesAsync();
+            if (files.Count > 0)
+            {
+                foreach (StorageFile file in files)
+                {
+                    FileAttachment attachment = new FileAttachment();
+                    attachment.Name = file.Name;
+                    attachment.Path = file.Path;
+                    attachment.Extension = file.FileType.ToLower().Replace(".", "").Replace("jpg", "jpeg");
+                    Attachments.Add(attachment);
+                }
+            }
+        }
+
+        private void RemoveAttachmentButton_Click(object sender, RoutedEventArgs e)
+        {
+            var item = (sender as FrameworkElement).DataContext;
+            var attachment = item as FileAttachment;
+            Attachments.Remove(attachment);
         }
     }
 }

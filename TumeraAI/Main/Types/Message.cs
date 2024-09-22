@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Content;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TumeraAI.Main.Utils;
@@ -15,6 +16,7 @@ namespace TumeraAI.Main.Types
         public DateTime Time => DateTime.Now;
         public string FormattedTime => Time.ToString("MMM dd yyyy, hh:mm tt");
         public List<string> Contents { get; set; }
+        public List<FileAttachment> Attachments { get; set; }
         public int ContentIndex = 0;
         private string _content = "";
         public string Content
