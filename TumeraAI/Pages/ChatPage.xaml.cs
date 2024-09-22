@@ -133,7 +133,14 @@ namespace TumeraAI.Pages
                     break;
             }
             if (!regenerate) Sessions[currentIndex].Messages.Add(message);
-            message.Attachments = Attachments.ToList();
+            if (!regenerate)
+            {
+                message.Attachments = Attachments.ToList();
+            }
+            else
+            {
+                message.Attachments = Sessions[currentIndex].Messages[msgIndex - 1].Attachments;
+            }
             PromptTextBox.Text = "";
             List<ChatMessage> messages = new List<ChatMessage>();
             if (!string.IsNullOrEmpty(RuntimeConfig.SystemPrompt))

@@ -73,7 +73,7 @@
                                                           OnContent="Enable Attachments"
                                                           IsOn="{x:Bind utils:RuntimeConfig.EnableAttachments, Mode=TwoWay}"
                                                           Toggled="EnableAttachmentsToggleSwitch_Toggled"
-                                                          ToolTipService.ToolTip="Enable the ability to attach files (images, docs, etc...) to the prompt to send to the AI for processing. The AI can only processing attached attached files if the selected model supports it. HIGHLY EXPERIMENTAL!"/>
+                                                          ToolTipService.ToolTip="Enable the ability to attach files (images, docs, etc...) to the prompt to send to the AI for processing. The AI can only processing attached attached files if the selected model supports it. May freeze the app for a few seconds during prompt sending and cause response to be generated more slowly."/>
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Left">
                                                 <TextBlock Text="Seed"
