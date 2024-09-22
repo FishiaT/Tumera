@@ -522,5 +522,21 @@ namespace TumeraAI.Pages
         {
             cancellationTokenSource?.Cancel();
         }
+
+        private void EnableAttachmentsToggleSwitch_Toggled(object sender, RoutedEventArgs e)
+        {
+            ToggleSwitch toggleSwitch = sender as ToggleSwitch;
+            if (toggleSwitch != null)
+            {
+                if (toggleSwitch.IsOn == true)
+                {
+                    AttachFilesButton.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    AttachFilesButton.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
     }
 }

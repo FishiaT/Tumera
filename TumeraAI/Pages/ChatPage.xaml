@@ -68,11 +68,12 @@
                                                           OnContent="Stream Responses"
                                                           IsOn="{x:Bind utils:RuntimeConfig.StreamResponse, Mode=TwoWay}"
                                                           ToolTipService.ToolTip="Output AI responses in real time as it's being generated instead of waiting for the full message."/>
-                                            <ToggleSwitch x:Name="EnableVisionToggleSwitch"
-                                                          OffContent="Enable Vision"
-                                                          OnContent="Enable Vision"
+                                            <ToggleSwitch x:Name="EnableAttachmentsToggleSwitch"
+                                                          OffContent="Enable Attachments"
+                                                          OnContent="Enable Attachments"
                                                           IsOn="{x:Bind utils:RuntimeConfig.EnableVision, Mode=TwoWay}"
-                                                          ToolTipService.ToolTip="Enable the ability to attach image(s) to the prompt to send to the AI for processing. The AI can only processing attached image(s) if the selected model is a vision model."/>
+                                                          Toggled="EnableAttachmentsToggleSwitch_Toggled"
+                                                          ToolTipService.ToolTip="Enable the ability to attach files (images, docs, etc...) to the prompt to send to the AI for processing. The AI can only processing attached attached files if the selected model supports it."/>
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Left">
                                                 <TextBlock Text="Seed"
@@ -452,8 +453,8 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Button x:Name="RoleSwitchButton"
@@ -461,9 +462,20 @@
                             Height="35.62"
                             Margin="0,0,11,0"
                             Click="RoleSwitchButton_Click"
-                            ToolTipService.ToolTip="Switch between roles (user, assistant and system). The 'User' role is for normal conversation. The 'Assistant' role is for inserting responses as the AI so that you can steer it towards a specific direction if so desired. The 'System' role is used to give the AI instructions, guidelines and/or information that it will follow throughout the conversation. Sending prompts as 'Assistant' or 'System' will not trigger inference (unless you choose to do so yourself)."/>
+                            ToolTipService.ToolTip="Switch between roles (user, assistant and system). The 'User' role is for normal conversation. The 'Assistant' role is for inserting responses as the AI so that you can steer it towards a specific direction if so desired. The 'System' role is used to give the AI instructions, guidelines and/or information that it will follow throughout the conversation. Sending prompts as 'Assistant' or 'System' will not trigger inference (unless you choose to do so yourself).">
+                    </Button>
+                    <Button x:Name="AttachFilesButton"
+                            Margin="0,0,11,0"
+                            Height="35.62"
+                            Grid.Column="1"
+                            Visibility="Collapsed"
+                            ToolTipService.ToolTip="Attach files to send to the AI">
+                        <StackPanel>
+                            <ic:SymbolIcon Symbol="Attach"/>
+                        </StackPanel>
+                    </Button>
                     <TextBox x:Name="PromptTextBox"
-                             Grid.Column="1"
+                             Grid.Column="2"
                              PlaceholderText="Enter your prompt here"
                              MaxHeight="142.48"
                              AcceptsReturn="True"
@@ -472,7 +484,7 @@
                     <Button x:Name="SendButton"
                             Margin="11,0,0,0"
                             Height="35.62"
-                            Grid.Column="2"
+                            Grid.Column="3"
                             Style="{StaticResource AccentButtonStyle}"
                             Click="SendButton_Click"
                             ToolTipService.ToolTip="Send the prompt and perform inference ('User' role only)">
