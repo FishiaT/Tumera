@@ -295,7 +295,6 @@ namespace TumeraAI.Pages
             ChatSession session = new ChatSession();
             session.Name = "New Chat";
             session.Time = DateTime.Now;
-            session.Id = $"chat_{RandomNumberGenerator.GetHexString(8, true)}";
             session.Messages = new ObservableCollection<Message>();
             Sessions.Add(session);
             ChatSessionsListView.SelectedIndex = currentCount;
@@ -318,7 +317,6 @@ namespace TumeraAI.Pages
             ChatSession dupSession = new ChatSession();
             dupSession.Name = session.Name;
             dupSession.Time = DateTime.Now;
-            dupSession.Id = $"chat_{RandomNumberGenerator.GetHexString(8, true)}";
             dupSession.Messages = new ObservableCollection<Message>();
             Sessions.Add(dupSession);
             ChatSessionsListView.SelectedIndex = currentCount;

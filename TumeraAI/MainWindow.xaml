@@ -51,7 +51,7 @@
             </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
                 <NavigationViewItem Content="Settings"
-                                    Tag="SettingsPage"
+                                    Tag="SettingPage"
                                     Icon="Setting"/>
                 <NavigationViewItem Content="About"
                                     Tag="AboutPage">
