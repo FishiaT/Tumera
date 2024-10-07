@@ -25,12 +25,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Betalgo.OpenAI" Version="8.6.2" />
+    <PackageReference Include="Betalgo.OpenAI" Version="8.7.1" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.Markdown" Version="7.1.2" />
-    <PackageReference Include="FluentIcons.WinUI" Version="1.1.258" />
-    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240829007" />
+    <PackageReference Include="FluentIcons.WinUI" Version="1.1.259" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.1.5" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240923002" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
@@ -78,8 +78,8 @@
     <SignAssembly>False</SignAssembly>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(NETCoreSdkVersion)' == '8.0.401'">
-    <WindowsSdkPackageVersion>10.0.22621.38</WindowsSdkPackageVersion>
+  <PropertyGroup>
+    <WindowsSdkPackageVersion>10.0.26100.38</WindowsSdkPackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
