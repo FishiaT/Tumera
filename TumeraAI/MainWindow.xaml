@@ -42,12 +42,6 @@
                 <NavigationViewItem Content="Chat"
                                     Tag="ChatPage"
                                     Icon="Message"/>
-                <NavigationViewItem Content="Local Server"
-                                    Tag="ServerHostPage">
-                    <NavigationViewItem.Icon>
-                        <ic:SymbolIcon Symbol="Server"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
             </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
                 <NavigationViewItem Content="Settings"
