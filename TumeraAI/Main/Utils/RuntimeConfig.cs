@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using static OpenAI.ObjectModels.StaticValues.AssistantsStatics.MessageStatics;
+using TumeraAI.Main.Types;
 
 namespace TumeraAI.Main.Utils
 {
